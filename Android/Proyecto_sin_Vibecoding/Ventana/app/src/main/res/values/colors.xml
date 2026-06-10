@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="background_color">#F2F1F1</color>
+    <color name="estado_desconectado">#E70B0B</color>
+    <color name="estado_conectado">#4CAF50</color>
+    <color name="estado_movimiento">#FF9800</color>
+    <color name="estado_automatico">#2196F3</color>
+    <color name="estado_manual">#9C27B0</color>
+</resources>
