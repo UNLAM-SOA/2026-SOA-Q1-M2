@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
         tvModoActual = findViewById(R.id.tv_modo_actual);
 
         Button btn_manual = findViewById(R.id.btn_modo_manual);
+        Button btn_auto = findViewById(R.id.btn_modo_auto);
 
         // Acción del botón Modo Manual (Publica, salta de pantalla y cierra la actual)
         btn_manual.setOnClickListener(new View.OnClickListener() {
@@ -47,6 +48,10 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
             }
         });
 
+        // Acción del botón Modo Automático (Se mantiene en esta pantalla)
+        btn_auto.setOnClickListener(v ->
+                MqttManager.getInstance().publish("/ventana/modo", "AUTOMATICO")
+        );
 
         conectarMqtt();
     }
@@ -106,7 +111,18 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(0, 1, 0, "Configuración");
+        return true;
+    }
 
-
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            startActivity(new Intent(this, ConfiguracionActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }

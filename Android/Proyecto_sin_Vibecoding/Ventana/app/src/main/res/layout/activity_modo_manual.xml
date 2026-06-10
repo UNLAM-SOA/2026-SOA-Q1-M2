@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,23 +9,6 @@
     android:padding="16dp">
 
     <!-- Mensaje de Advertencia anclado arriba -->
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="279dp"
-        android:layout_height="53dp"
-        android:background="@color/estado_conectado"
-        android:gravity="center"
-        android:text="MODO MANUAL"
-        android:textColor="#3F51B5"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.028" />
-
     <TextView
         android:id="@+id/tv_warning_auto"
         android:layout_width="0dp"
@@ -40,69 +22,67 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Tarjeta de Estado anclada debajo de la advertencia -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_estado"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_warning_auto">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:id="@+id/tv_manual_estado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Estado: --"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Botón Abrir centrado en la cadena vertical -->
-
-    <!-- Botón Cerrar anclado debajo del de Abrir -->
-
-    <!-- Nuevo Botón Volver anclado a la parte inferior de la pantalla -->
-
-    <Button
-        android:id="@+id/btn_cerrar"
-        android:layout_width="0dp"
-        android:layout_height="60dp"
-        android:text="Cerrar Ventana"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.732" />
-
     <Button
         android:id="@+id/btn_abrir"
         android:layout_width="0dp"
         android:layout_height="60dp"
         android:text="Abrir Ventana"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btn_cerrar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.622"
+        app:layout_constraintTop_toBottomOf="@id/card_estado"
         app:layout_constraintVertical_chainStyle="packed" />
 
+    <!-- Botón Cerrar anclado debajo del de Abrir -->
+    <Button
+        android:id="@+id/btn_cerrar"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="16dp"
+        android:text="Cerrar Ventana"
+        app:layout_constraintBottom_toTopOf="@id/btn_volver"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_abrir" />
+
+    <!-- Nuevo Botón Volver anclado a la parte inferior de la pantalla -->
     <Button
         android:id="@+id/btn_volver"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Pasar a Modo Automatico"
+        android:text="Modo Automatico"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/tv_warning_auto"
         app:layout_constraintVertical_bias="0.892" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/tv_warning_auto"
-        app:layout_constraintVertical_bias="0.177">
-
-        <TextView
-            android:id="@+id/tv_manual_estado"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Estado: --"
-            android:textSize="18sp" />
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

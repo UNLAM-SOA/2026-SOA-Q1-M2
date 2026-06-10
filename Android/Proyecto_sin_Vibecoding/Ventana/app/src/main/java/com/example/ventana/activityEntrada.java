@@ -1,7 +1,6 @@
 package com.example.ventana;
 
-
-import androidx.appcompat.app.AlertDialog;
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,7 +8,6 @@ import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,9 +21,10 @@ import com.google.android.material.textfield.TextInputEditText;
 
 public class activityEntrada extends AppCompatActivity {
 
+    // Declaramos las variables para los componentes visuales
     private TextInputEditText etUser, etPassword;
     private Button btnLogin;
-    private TextView tvForgotPassword, tvcrearUsuario;
+    private TextView tvForgotPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,18 +32,21 @@ public class activityEntrada extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_entrada);
 
+        // Configuración de los márgenes del sistema (EdgeToEdge)
+        // Asegurate de que el ScrollView en tu XML tenga el id "main"
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
+        // Enlazamos los componentes del XML con Java
         etUser = findViewById(R.id.etUser);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        tvcrearUsuario = findViewById(R.id.tvCrearUsuario);
 
+        // Lógica del botón Entrar
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -52,20 +54,16 @@ public class activityEntrada extends AppCompatActivity {
             }
         });
 
+        // Lógica del texto "Olvidé mi contraseña"
         tvForgotPassword.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mostrarDialogoRecuperarClave();
             }
         });
-        tvcrearUsuario.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mostrarDialogoCrearUsuario();
-            }
-        });
     }
 
+    // Método para validar el admin admin hardcodeado
     private void validarIngreso() {
         String usuario = etUser.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -75,49 +73,44 @@ public class activityEntrada extends AppCompatActivity {
             return;
         }
 
+        // Validación hardcodeada
         if (usuario.equals("admin") && password.equals("admin")) {
-            irAMainActivity( "Bienvenido ADMIN");
+            Toast.makeText(this, "¡Ingreso exitoso! Bienvenido", Toast.LENGTH_SHORT).show();
+
+            // Creamos el Intent para pasar desde esta actividad a MainActivity
+            Intent intent = new Intent(activityEntrada.this, MainActivity.class);
+            startActivity(intent);
+
+            // Destruimos esta activity para que no quede en el historial de navegación hacia atrás
+            finish();
+
         } else {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    AppBaseDatos db = AppBaseDatos.getInstance(getApplicationContext());
-                    Usuario usuarioEncontrado = db.usuarioDao().login(usuario, password);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (usuarioEncontrado != null) {
-                                irAMainActivity("¡Ingreso exitoso! Bienvenido " + usuarioEncontrado.nombreUsuario);
-                            } else {
-                                Toast.makeText(activityEntrada.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-                }
-            }).start();
+            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
         }
     }
-    private void irAMainActivity(String mensajeBienvenida) {
-        Toast.makeText(this, mensajeBienvenida, Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(activityEntrada.this, MainActivity.class);
-        startActivity(intent);
-        finish();
-    }
+
+    // Método para mostrar el cuadro de diálogo (Pop-up) para el email
     private void mostrarDialogoRecuperarClave() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Recuperar Contraseña");
-        builder.setMessage("Ingresa tu correo electrónico:");
+        builder.setMessage("Ingresa tu correo electrónico para enviarte las instrucciones:");
 
+        // Creamos un campo de texto dinámico para que el usuario escriba su mail
         final EditText inputEmail = new EditText(this);
         inputEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
         inputEmail.setHint("ejemplo@correo.com");
+
+        // Le damos un poco de margen interno al campo de texto dentro del diálogo
+        inputEmail.setPadding(40, 30, 40, 30);
         builder.setView(inputEmail);
 
+        // Botón Confirmar / Enviar
         builder.setPositiveButton("Enviar", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String email = inputEmail.getText().toString().trim();
                 if (!email.isEmpty()) {
+                    // Por ahora solo emula la acción con un cartelito en pantalla
                     Toast.makeText(activityEntrada.this, "Correo enviado a: " + email, Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(activityEntrada.this, "Debes ingresar un correo válido", Toast.LENGTH_SHORT).show();
@@ -125,71 +118,15 @@ public class activityEntrada extends AppCompatActivity {
             }
         });
 
+        // Botón Cancelar
         builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
+                dialog.cancel(); // Cierra el pop-up sin hacer nada
             }
         });
 
-        builder.show();
-    }
-
-
-    private void mostrarDialogoCrearUsuario() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Crear Usuario");
-        LinearLayout layoutContenedor = new LinearLayout(this);
-        layoutContenedor.setOrientation(LinearLayout.VERTICAL);
-        layoutContenedor.setPadding(50, 40, 50, 10);
-        final EditText inputUsuario = new EditText(this);
-        inputUsuario.setHint("Ingresa tu Usuario");
-        inputUsuario.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        layoutContenedor.addView(inputUsuario);
-
-        final EditText inputClave = new EditText(this);
-        inputClave.setHint("Ingresa tu contraseña");
-        inputClave.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        layoutContenedor.addView(inputClave);
-        builder.setView(layoutContenedor);
-
-        builder.setPositiveButton("Enviar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String Usuario = inputUsuario.getText().toString().trim();
-                String clave = inputClave.getText().toString().trim();
-                if (!Usuario.isEmpty() && !clave.isEmpty()) {
-                    Usuario nuevoUsuario = new Usuario();
-                    nuevoUsuario.nombreUsuario = Usuario;
-                    nuevoUsuario.contrasena = clave;
-
-                    new Thread(new Runnable() { //hilo secundario para procesar los datos en la DB
-                        @Override
-                        public void run() {
-                            AppBaseDatos db = AppBaseDatos.getInstance(getApplicationContext());
-                            db.usuarioDao().insertar(nuevoUsuario);
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(getApplicationContext(), "Usuario '" + Usuario + "' creado con éxito", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                    }).start();
-                } else {
-                    Toast.makeText(activityEntrada.this, "El usuario y/o contraseña no pueden ser vacios", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
+        // Mostramos el cuadro en pantalla
         builder.show();
     }
 }
