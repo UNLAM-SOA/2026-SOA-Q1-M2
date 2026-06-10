@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,6 +10,20 @@
     android:padding="16dp">
 
     <!-- Mensaje de Advertencia anclado arriba -->
+
+    <ImageView
+        android:id="@+id/imageView"
+        tools:layout_editor_absoluteX="159dp"
+        tools:layout_editor_absoluteY="-8dp"
+        android:layout_width="72dp"
+        android:layout_height="53dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/logo" />
+
     <TextView
         android:id="@+id/tv_warning_auto"
         android:layout_width="0dp"
@@ -22,67 +37,125 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Tarjeta de Estado anclada debajo de la advertencia -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_estado"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_warning_auto">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-            <TextView
-                android:id="@+id/tv_manual_estado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Estado: --"
-                android:textSize="18sp" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
     <!-- Botón Abrir centrado en la cadena vertical -->
-    <Button
-        android:id="@+id/btn_abrir"
-        android:layout_width="0dp"
-        android:layout_height="60dp"
-        android:text="Abrir Ventana"
-        app:layout_constraintBottom_toTopOf="@id/btn_cerrar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_estado"
-        app:layout_constraintVertical_chainStyle="packed" />
 
     <!-- Botón Cerrar anclado debajo del de Abrir -->
+
+    <!-- Nuevo Botón Volver anclado a la parte inferior de la pantalla -->
+
     <Button
         android:id="@+id/btn_cerrar"
         android:layout_width="0dp"
         android:layout_height="60dp"
-        android:layout_marginTop="16dp"
+        android:backgroundTint="#00BCD4"
         android:text="Cerrar Ventana"
+        android:textColorLink="#FF5722"
         app:layout_constraintBottom_toTopOf="@id/btn_volver"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_abrir" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.605" />
 
-    <!-- Nuevo Botón Volver anclado a la parte inferior de la pantalla -->
+    <Button
+        android:id="@+id/btn_abrir"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:backgroundTint="#00BCD4"
+        android:text="Abrir Ventana"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/tv_warning_auto"
+        app:layout_constraintVertical_bias="0.657"
+        app:layout_constraintVertical_chainStyle="packed" />
+
     <Button
         android:id="@+id/btn_volver"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Modo Automatico"
+        android:backgroundTint="#875FCC"
+        android:text="Establecer Modo Automatico"
+        android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/tv_warning_auto"
         app:layout_constraintVertical_bias="0.892" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.273">
+
+        <TextView
+            android:id="@+id/tv_manual_estado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Estado: --"
+            android:textColor="#000000"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="349dp"
+        android:layout_height="48dp"
+        android:background="#A8E9A2"
+        android:gravity="center"
+        android:text="MODO MANUAL"
+        android:textAlignment="gravity"
+        android:textColor="#000FDE"
+        android:textSize="24sp"
+        android:textStyle="normal|bold"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.493" />
+
+    <TextView
+        android:id="@+id/tv_saludo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:textColor="#070101"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toStartOf="@+id/imageView"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.25" />
+
+    <Button
+        android:id="@+id/btnExit"
+        android:layout_width="50dp"
+        android:layout_height="36dp"
+        android:backgroundTint="#05FFFFFF"
+        android:text="Button"
+        android:textColorLink="#E9943232"
+        app:icon="@drawable/baseline_logout_24"
+        app:iconGravity="top"
+        app:iconTint="#070000"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.854"
+        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.629" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

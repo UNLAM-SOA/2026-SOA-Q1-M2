@@ -17,15 +17,15 @@ xmlns:tools="http://schemas.android.com/tools">
         android:exported="false" />
 
     <activity
-        android:name=".modoManual"
+        android:name=".ModoManual"
         android:exported="false" />
 
     <activity
-        android:name=".MainActivity"
+        android:name=".ModoAutomatico"
         android:exported="false" />
 
     <activity
-        android:name=".activityEntrada"
+        android:name=".ActivityEntrada"
         android:exported="true"
         android:windowSoftInputMode="adjustResize">
         <intent-filter>

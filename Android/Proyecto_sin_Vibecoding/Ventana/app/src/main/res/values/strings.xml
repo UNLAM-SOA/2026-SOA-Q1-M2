@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Ventana</string>
+    <string name="usuario">Usuario</string>
+    <string name="contrase_a">Contraseña</string>
+    <string name="entrar">Entrar</string>
+    <string name="olvid_mi_contrase_a">Olvidé mi contraseña</string>
+    <string name="crear_usuario">Crear Usuario</string>
 </resources>

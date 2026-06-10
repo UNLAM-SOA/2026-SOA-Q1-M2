@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -12,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import android.view.View;
 
-public class MainActivity extends AppCompatActivity implements MqttManager.MqttCallbackListener {
+public class ModoAutomatico extends AppCompatActivity implements MqttManager.MqttCallbackListener {
 
     private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana, tvModoActual;
     private String modoActual = "";
@@ -28,9 +27,21 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
         tvHumedad = findViewById(R.id.tv_humedad);
         tvEstadoVentana = findViewById(R.id.tv_estado_ventana);
         tvModoActual = findViewById(R.id.tv_modo_actual);
+        String nombreUsuario = GestorSesion.obtenerUsuario(this);
+
+        TextView tvSaludo = findViewById(R.id.tv_saludo);
+        tvSaludo.setText("Usuario: " + nombreUsuario);
+
+        Button btnExit2 = findViewById(R.id.btnExit2);
+        btnExit2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GestorSesion.cerrarSesion(v.getContext());
+            }
+        });
+
 
         Button btn_manual = findViewById(R.id.btn_modo_manual);
-        Button btn_auto = findViewById(R.id.btn_modo_auto);
 
         // Acción del botón Modo Manual (Publica, salta de pantalla y cierra la actual)
         btn_manual.setOnClickListener(new View.OnClickListener() {
@@ -40,18 +51,13 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
                 MqttManager.getInstance().publish("/ventana/modo", "MANUAL");
 
                 // 2. Saltar a la pantalla de modoManual
-                Intent intent = new Intent(MainActivity.this, modoManual.class);
+                Intent intent = new Intent(ModoAutomatico.this, ModoManual.class);
                 startActivity(intent);
 
                 // 3. Destruir MainActivity para que no quede de fondo
                 finish();
             }
         });
-
-        // Acción del botón Modo Automático (Se mantiene en esta pantalla)
-        btn_auto.setOnClickListener(v ->
-                MqttManager.getInstance().publish("/ventana/modo", "AUTOMATICO")
-        );
 
         conectarMqtt();
     }
@@ -117,12 +123,4 @@ public class MainActivity extends AppCompatActivity implements MqttManager.MqttC
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == 1) {
-            startActivity(new Intent(this, ConfiguracionActivity.class));
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 }

@@ -4,19 +4,35 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class modoManual extends AppCompatActivity {
+public class ModoManual extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_modo_manual);
+        String nombreUsuario = GestorSesion.obtenerUsuario(this);
+
+        TextView tvSaludo = findViewById(R.id.tv_saludo);
+        tvSaludo.setText("Usuario: " + nombreUsuario);
+
+        Button btnExit = findViewById(R.id.btnExit);
+
+        btnExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GestorSesion.cerrarSesion(v.getContext());
+            }
+        });
+
 
         // Configuración de los márgenes del sistema (EdgeToEdge)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -36,7 +52,7 @@ public class modoManual extends AppCompatActivity {
                 MqttManager.getInstance().publish("/ventana/modo", "AUTOMATICO");
 
                 // Creamos el salto de regreso a MainActivity
-                Intent intent = new Intent(modoManual.this, MainActivity.class);
+                Intent intent = new Intent(ModoManual.this, ModoAutomatico.class);
                 startActivity(intent);
 
                 // Destruimos modoManual para que no quede de fondo
