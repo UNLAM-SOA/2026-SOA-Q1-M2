@@ -12,9 +12,6 @@ xmlns:tools="http://schemas.android.com/tools">
     android:supportsRtl="true"
     android:theme="@style/Theme.Ventana">
 
-    <activity
-        android:name=".ConfiguracionActivity"
-        android:exported="false" />
 
     <activity
         android:name=".ModoManual"

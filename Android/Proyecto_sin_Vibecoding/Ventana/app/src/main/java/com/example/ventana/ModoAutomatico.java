@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -11,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import android.view.View;
 
-public class ModoAutomatico extends AppCompatActivity implements MqttManager.MqttCallbackListener {
+public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.CallbackConexion {
 
     private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana, tvModoActual;
     private String modoActual = "";
@@ -27,19 +28,16 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
         tvHumedad = findViewById(R.id.tv_humedad);
         tvEstadoVentana = findViewById(R.id.tv_estado_ventana);
         tvModoActual = findViewById(R.id.tv_modo_actual);
-        String nombreUsuario = GestorSesion.obtenerUsuario(this);
 
+        // Usar clase FuncionesGenericas para configurar saludo, cerrar sesión y diálogo de configuración
         TextView tvSaludo = findViewById(R.id.tv_saludo);
-        tvSaludo.setText("Usuario: " + nombreUsuario);
+        FuncionesGenericas.configurarSaludoUsuario(this, tvSaludo);
 
         Button btnExit2 = findViewById(R.id.btnExit2);
-        btnExit2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                GestorSesion.cerrarSesion(v.getContext());
-            }
-        });
+        FuncionesGenericas.configurarBotonSalir(this, btnExit2);
 
+        Button btnConfig = findViewById(R.id.btnConfig);
+        FuncionesGenericas.configurarBotonConfiguracion(this, btnConfig, () -> conectarMqtt());
 
         Button btn_manual = findViewById(R.id.btn_modo_manual);
 
@@ -47,8 +45,8 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
         btn_manual.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 1. Notificar al broker MQTT
-                MqttManager.getInstance().publish("/ventana/modo", "MANUAL");
+                // 1. Notificar al broker MQTT usando conexion_ESP
+                conexion_ESP.getInstancia(ModoAutomatico.this).publicar("/ventana/modo", "MANUAL");
 
                 // 2. Saltar a la pantalla de modoManual
                 Intent intent = new Intent(ModoAutomatico.this, ModoManual.class);
@@ -63,20 +61,31 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
     }
 
     private void conectarMqtt() {
-        SharedPreferences prefs = getSharedPreferences("ConfigMQTT", MODE_PRIVATE);
-        String host = prefs.getString("host", "tcp://broker.emqx.io");
-        String port = prefs.getString("port", "1883");
-        String user = prefs.getString("user", "");
-        String pass = prefs.getString("pass", "");
-
-        MqttManager.getInstance().setCallbackListener(this);
-        MqttManager.getInstance().connect(host + ":" + port, "AndroidClient_" + System.currentTimeMillis(), user, pass);
+        // Inicializar/actualizar la clase conexion_ESP y registrar esta actividad como callback
+        conexion_ESP conexion = conexion_ESP.getInstancia(this);
+        conexion.setCallback(this);
+        conexion.cargarConfiguracion(this);
+        conexion.conectar();
     }
 
     @Override
-    public void onConnectionStatusChanged(boolean isConnected) {
+    protected void onResume() {
+        super.onResume();
+        // Iniciar la detección de Shake al volver a la pantalla
+        conexion_ESP.getInstancia(this).iniciarDeteccionShake(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Detener la detección de Shake para evitar uso innecesario de sensores
+        conexion_ESP.getInstancia(this).detenerDeteccionShake();
+    }
+
+    @Override
+    public void onEstadoConexionCambiado(boolean conectado) {
         runOnUiThread(() -> {
-            if (isConnected) {
+            if (conectado) {
                 tvMqttStatus.setText("Conectado");
                 tvMqttStatus.setTextColor(ContextCompat.getColor(this, R.color.estado_conectado));
             } else {
@@ -87,7 +96,7 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
     }
 
     @Override
-    public void onMessageReceived(String topic, String message) {
+    public void onMensajeRecibido(String topic, String message) {
         runOnUiThread(() -> {
             switch (topic) {
                 case "/ventana/temp":
@@ -97,21 +106,13 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
                     tvHumedad.setText("Humedad: " + message + " %");
                     break;
                 case "/ventana/estado":
-                    tvEstadoVentana.setText(message);
-                    if (message.equals("ABRIENDO") || message.equals("CERRANDO")) {
-                        tvEstadoVentana.setTextColor(ContextCompat.getColor(this, R.color.estado_movimiento));
-                    } else {
-                        tvEstadoVentana.setTextColor(ContextCompat.getColor(this, android.R.color.black));
-                    }
+                    // Abstraer la lógica del estado de la ventana en FuncionesGenericas
+                    FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
                     break;
                 case "/ventana/modo":
                     modoActual = message;
-                    tvModoActual.setText(message);
-                    if (message.equals("AUTOMATICO")) {
-                        tvModoActual.setTextColor(ContextCompat.getColor(this, R.color.estado_automatico));
-                    } else {
-                        tvModoActual.setTextColor(ContextCompat.getColor(this, R.color.estado_manual));
-                    }
+                    // Abstraer la lógica del modo en FuncionesGenericas
+                    FuncionesGenericas.actualizarModoActual(this, tvModoActual, message);
                     break;
             }
         });
@@ -123,4 +124,12 @@ public class ModoAutomatico extends AppCompatActivity implements MqttManager.Mqt
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            conexion_ESP.getInstancia(this).mostrarDialogoConfiguracion(this, () -> conectarMqtt());
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }
