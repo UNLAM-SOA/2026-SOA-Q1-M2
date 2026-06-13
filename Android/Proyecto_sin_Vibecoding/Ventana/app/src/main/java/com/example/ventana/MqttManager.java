@@ -71,9 +71,21 @@ public class MqttManager {
                 public void deliveryComplete(IMqttDeliveryToken token) {}
             });
 
-            mqttClient.connect(options);
+            mqttClient.connect(options, null, new org.eclipse.paho.client.mqttv3.IMqttActionListener() {
+                @Override
+                public void onSuccess(org.eclipse.paho.client.mqttv3.IMqttToken asyncActionToken) {
+                    Log.d(TAG, "Solicitud de conexión enviada con éxito");
+                }
+
+                @Override
+                public void onFailure(org.eclipse.paho.client.mqttv3.IMqttToken asyncActionToken, Throwable exception) {
+                    Log.e(TAG, "Fallo al iniciar conexión: " + exception.getMessage());
+                    if (callbackListener != null) callbackListener.onConnectionStatusChanged(false);
+                }
+            });
         } catch (MqttException e) {
-            Log.e(TAG, "Error MQTT: " + e.getMessage());
+            Log.e(TAG, "Error al configurar MQTT: " + e.getMessage());
+            if (callbackListener != null) callbackListener.onConnectionStatusChanged(false);
         }
     }
 
