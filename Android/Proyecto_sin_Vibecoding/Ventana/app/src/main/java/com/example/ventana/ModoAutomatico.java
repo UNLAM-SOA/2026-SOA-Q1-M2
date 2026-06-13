@@ -1,7 +1,6 @@
 package com.example.ventana;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import android.view.View;
 
-public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.CallbackConexion {
+public class ModoAutomatico extends AppCompatActivity implements ConexionESP.CallbackConexion {
 
     private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana, tvModoActual;
     private String modoActual = "";
@@ -45,8 +44,8 @@ public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.Ca
         btn_manual.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 1. Notificar al broker MQTT usando conexion_ESP
-                conexion_ESP.getInstancia(ModoAutomatico.this).publicar("/ventana/modo", "MANUAL");
+                // 1. Notificar al broker MQTT usando ConexionESP
+                ConexionESP.getInstancia(ModoAutomatico.this).publicar("/ventana/modo", "MANUAL");
 
                 // 2. Saltar a la pantalla de modoManual
                 Intent intent = new Intent(ModoAutomatico.this, ModoManual.class);
@@ -61,8 +60,8 @@ public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.Ca
     }
 
     private void conectarMqtt() {
-        // Inicializar/actualizar la clase conexion_ESP y registrar esta actividad como callback
-        conexion_ESP conexion = conexion_ESP.getInstancia(this);
+        // Inicializar/actualizar la clase ConexionESP y registrar esta actividad como callback
+        ConexionESP conexion = ConexionESP.getInstancia(this);
         conexion.setCallback(this);
         conexion.cargarConfiguracion(this);
         conexion.conectar();
@@ -72,14 +71,14 @@ public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.Ca
     protected void onResume() {
         super.onResume();
         // Iniciar la detección de Shake al volver a la pantalla
-        conexion_ESP.getInstancia(this).iniciarDeteccionShake(this);
+        ConexionESP.getInstancia(this).iniciarDeteccionShake(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         // Detener la detección de Shake para evitar uso innecesario de sensores
-        conexion_ESP.getInstancia(this).detenerDeteccionShake();
+        ConexionESP.getInstancia(this).detenerDeteccionShake();
     }
 
     @Override
@@ -127,7 +126,7 @@ public class ModoAutomatico extends AppCompatActivity implements conexion_ESP.Ca
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == 1) {
-            conexion_ESP.getInstancia(this).mostrarDialogoConfiguracion(this, () -> conectarMqtt());
+            ConexionESP.getInstancia(this).mostrarDialogoConfiguracion(this, () -> conectarMqtt());
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -14,7 +14,7 @@ public abstract class AppBaseDatos extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppBaseDatos.class, "ventana_inteligente.db")
-                            // ¡Ojo! En producción usarías migraciones, esto es para desarrollo:
+                            // para desarrollo
                             .fallbackToDestructiveMigration()
                             .build();
                 }

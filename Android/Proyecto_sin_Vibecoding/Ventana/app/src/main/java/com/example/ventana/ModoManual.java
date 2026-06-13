@@ -12,7 +12,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class ModoManual extends AppCompatActivity implements conexion_ESP.CallbackConexion {
+public class ModoManual extends AppCompatActivity implements ConexionESP.CallbackConexion {
 
     private TextView tvEstadoVentana, tvModoActual;
 
@@ -50,8 +50,8 @@ public class ModoManual extends AppCompatActivity implements conexion_ESP.Callba
         btnVolver.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Notificamos al broker MQTT el cambio de modo usando conexion_ESP
-                conexion_ESP.getInstancia(ModoManual.this).publicar("/ventana/modo", "AUTOMATICO");
+                // Notificamos al broker MQTT el cambio de modo usando ConexionESP
+                ConexionESP.getInstancia(ModoManual.this).publicar("/ventana/modo", "AUTOMATICO");
 
                 // Creamos el salto de regreso a MainActivity
                 Intent intent = new Intent(ModoManual.this, ModoAutomatico.class);
@@ -69,14 +69,14 @@ public class ModoManual extends AppCompatActivity implements conexion_ESP.Callba
         btnAbrir.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                conexion_ESP.getInstancia(ModoManual.this).abrir(ModoManual.this);
+                ConexionESP.getInstancia(ModoManual.this).abrir(ModoManual.this);
             }
         });
 
         btnCerrar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                conexion_ESP.getInstancia(ModoManual.this).cerrar(ModoManual.this);
+                ConexionESP.getInstancia(ModoManual.this).cerrar(ModoManual.this);
             }
         });
     }
@@ -85,17 +85,17 @@ public class ModoManual extends AppCompatActivity implements conexion_ESP.Callba
     protected void onResume() {
         super.onResume();
         // Registrar esta actividad como callback para recibir los mensajes de MQTT
-        conexion_ESP.getInstancia(this).setCallback(this);
+        ConexionESP.getInstancia(this).setCallback(this);
 
         // Iniciar la detección de Shake al volver a la pantalla
-        conexion_ESP.getInstancia(this).iniciarDeteccionShake(this);
+        ConexionESP.getInstancia(this).iniciarDeteccionShake(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         // Detener la detección de Shake para evitar uso innecesario de sensores
-        conexion_ESP.getInstancia(this).detenerDeteccionShake();
+        ConexionESP.getInstancia(this).detenerDeteccionShake();
     }
 
     @Override

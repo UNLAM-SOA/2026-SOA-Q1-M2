@@ -21,7 +21,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 
-public class ActivityEntrada extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     // Declaramos las variables para los componentes visuales
     private TextInputEditText etUser, etPassword;
@@ -34,7 +34,7 @@ public class ActivityEntrada extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_entrada);
 
-        // Configuración de los márgenes del sistema (EdgeToEdge)
+        // Configuracion de los márgenes del sistema (EdgeToEdge)
         // Asegurate de que el ScrollView en tu XML tenga el id "main"
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -50,7 +50,7 @@ public class ActivityEntrada extends AppCompatActivity {
         tvCrearUsuario = findViewById(R.id.tvCrearUsuario);
 
 
-        // Lógica del botón Entrar
+        // Logica del boton Entrar
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,7 +74,7 @@ public class ActivityEntrada extends AppCompatActivity {
         });
     }
 
-    // Método para validar el admin admin hardcodeado
+    // Metodo para validar el admin admin hardcodeado
     private void validarIngreso() {
         String usuario = etUser.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -89,7 +89,7 @@ public class ActivityEntrada extends AppCompatActivity {
         }
         // 2. Si no es el admin, buscamos en la base de datos (en un hilo de fondo)
         new Thread(() -> {
-            AppBaseDatos db = AppBaseDatos.getInstance(ActivityEntrada.this);
+            AppBaseDatos db = AppBaseDatos.getInstance(MainActivity.this);
             // Usamos el método login del DAO que busca por usuario y contraseña
             Usuario usuarioDb = db.usuarioDao().login(usuario, password);
             if (usuarioDb != null) {
@@ -100,7 +100,7 @@ public class ActivityEntrada extends AppCompatActivity {
             } else {
                 // Si no existe o la contraseña es incorrecta
                 runOnUiThread(() -> {
-                    Toast.makeText(ActivityEntrada.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
                 });
             }
         }).start();
@@ -108,9 +108,9 @@ public class ActivityEntrada extends AppCompatActivity {
     private void iniciarSesionExitosa(String nombreUsuario) {
         Toast.makeText(this, "¡Ingreso exitoso! Bienvenido", Toast.LENGTH_SHORT).show();
 
-        Intent intent = new Intent(ActivityEntrada.this, ModoAutomatico.class);
+        Intent intent = new Intent(MainActivity.this, ModoAutomatico.class);
         startActivity(intent);
-        GestorSesion.guardarUsuario(ActivityEntrada.this, nombreUsuario);
+        GestorSesion.guardarUsuario(MainActivity.this, nombreUsuario);
 
         // Cerramos esta pantalla para que no se pueda volver atrás con el botón retroceder del celular
         finish();
@@ -148,17 +148,17 @@ public class ActivityEntrada extends AppCompatActivity {
                 String pass = inputPassword.getText().toString().trim();
                 // Validación: campos vacíos
                 if (user.isEmpty() || pass.isEmpty()) {
-                    Toast.makeText(ActivityEntrada.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // Realizamos la validación y el guardado en un hilo de fondo (Thread)
                 new Thread(() -> {
-                    AppBaseDatos db = AppBaseDatos.getInstance(ActivityEntrada.this);
+                    AppBaseDatos db = AppBaseDatos.getInstance(MainActivity.this);
                     Usuario usuarioExistente = db.usuarioDao().obtenerPorNombre(user);
                     if (usuarioExistente != null) {
                         // Si ya existe, avisamos en pantalla
                         runOnUiThread(() -> {
-                            Toast.makeText(ActivityEntrada.this, "El usuario ya existe", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "El usuario ya existe", Toast.LENGTH_LONG).show();
                         });
                     } else {
                         // Si no existe, lo creamos y lo guardamos
@@ -167,7 +167,7 @@ public class ActivityEntrada extends AppCompatActivity {
                         nuevoUsuario.contrasena = pass;
                         db.usuarioDao().insertar(nuevoUsuario);
                         runOnUiThread(() -> {
-                            Toast.makeText(ActivityEntrada.this, "Usuario creado con éxito", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Usuario creado con éxito", Toast.LENGTH_LONG).show();
                         });
                     }
                 }).start();
@@ -206,9 +206,9 @@ public class ActivityEntrada extends AppCompatActivity {
                 String email = inputEmail.getText().toString().trim();
                 if (!email.isEmpty()) {
                     // Por ahora solo emula la acción con un cartelito en pantalla
-                    Toast.makeText(ActivityEntrada.this, "Correo enviado a: " + email, Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Correo enviado a: " + email, Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(ActivityEntrada.this, "Debes ingresar un correo válido", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Debes ingresar un correo válido", Toast.LENGTH_SHORT).show();
                 }
             }
         });

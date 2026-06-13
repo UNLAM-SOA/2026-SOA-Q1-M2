@@ -34,7 +34,7 @@ public class FuncionesGenericas {
             btnConfig.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    conexion_ESP.getInstancia(activity).mostrarDialogoConfiguracion(activity, onSaveCallback);
+                    ConexionESP.getInstancia(activity).mostrarDialogoConfiguracion(activity, onSaveCallback);
                 }
             });
         }

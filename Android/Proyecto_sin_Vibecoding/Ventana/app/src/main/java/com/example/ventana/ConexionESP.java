@@ -8,9 +8,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
 
-public class conexion_ESP implements SensorEventListener {
-    private static final String TAG = "conexion_ESP";
-    private static conexion_ESP instancia;
+public class ConexionESP implements SensorEventListener {
+    private static final String TAG = "ConexionESP";
+    private static ConexionESP instancia;
 
     private String host;
     private String port;
@@ -35,13 +35,13 @@ public class conexion_ESP implements SensorEventListener {
 
     private CallbackConexion callback;
 
-    private conexion_ESP(Context context) {
+    private ConexionESP(Context context) {
         cargarConfiguracion(context);
     }
 
-    public static synchronized conexion_ESP getInstancia(Context context) {
+    public static synchronized ConexionESP getInstancia(Context context) {
         if (instancia == null) {
-            instancia = new conexion_ESP(context.getApplicationContext());
+            instancia = new ConexionESP(context.getApplicationContext());
         }
         return instancia;
     }
@@ -68,7 +68,7 @@ public class conexion_ESP implements SensorEventListener {
         editor.putString("user", user);
         editor.putString("pass", password);
         editor.apply();
-        Log.d(TAG, "Configuración guardada en SharedPreferences y actualizada en conexion_ESP");
+        Log.d(TAG, "Configuración guardada en SharedPreferences y actualizada en ConexionESP");
     }
 
     public void setCallback(CallbackConexion callback) {
