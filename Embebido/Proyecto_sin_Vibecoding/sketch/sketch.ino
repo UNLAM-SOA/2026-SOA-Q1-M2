@@ -7,7 +7,7 @@
 #include "freertos/timers.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "Constantes.h"
+#include "constantes.h"
 #include "Metrics.h"
 
 // Clientes WiFi y MQTT
@@ -46,6 +46,7 @@ TimerHandle_t pirTimer;
 short indice_sensor = 0;
 bool lluvia = false;
 bool humedad_alta = false;
+bool detenido_por_emergencia = false; // Bandera para la lógica de reinicio
 
 QueueHandle_t queueEvents;
 TaskHandle_t loopTaskHandler;
@@ -124,20 +125,49 @@ void motor_control(int vel, int d1, int d2) {
 
 // Verificaciones de sensores
 tipo_evento_t verificarEmergencia() {
-  static int ultimo_estado = HIGH;
-  int estado_lectura = digitalRead(GPIO_EMERG);
+  static int ultimo_estado_estable = FALSO;  // El estado real confirmado
+  static int ultimo_estado_leido = FALSO;    // Lo último que leyó el pin
+  static uint32_t ultimo_tiempo_cambio = INI;
 
-  if (estado_lectura == LOW && ultimo_estado == HIGH) {
-    Serial.printf("[Sensor] Emergencia detectada.\n");
-    encender_led();
-    ultimo_estado = estado_lectura;
-    return EVT_EMRGENCE;
-  } else if (estado_lectura == HIGH && ultimo_estado == LOW) {
-    apagar_led();
+  int estado_lectura = digitalRead(GPIO_EMERG);
+  tipo_evento_t evento_generado = EVT_CONTINUE;
+
+  // Calibración inicial en el primer ciclo
+  if (ultimo_estado_estable == FALSO) {
+    ultimo_estado_estable = estado_lectura;
+    ultimo_estado_leido = estado_lectura;
+    return EVT_CONTINUE;
   }
 
-  ultimo_estado = estado_lectura;
-  return EVT_CONTINUE;
+  // Si hubo un cambio físico en el pin, reseteo
+  if (estado_lectura != ultimo_estado_leido) {
+    ultimo_tiempo_cambio = millis();
+    ultimo_estado_leido = estado_lectura;
+  }
+
+  // Si la lectura se mantuvo estable por más tiempo que nuestro filtro
+  if ((millis() - ultimo_tiempo_cambio) > T_ANTIREBOTE) {
+    
+    // Y además, ese estado estable es distinto al último que habíamos confirmado
+    if (estado_lectura != ultimo_estado_estable) {
+      
+      // Flanco de bajada validado (Botón presionado y sin rebote)
+      if (estado_lectura == LOW && ultimo_estado_estable == HIGH) {
+        Serial.printf("[Sensor] Emergencia detectada.\n");
+        encender_led();
+        evento_generado = EVT_EMRGENCE;
+      } 
+      // Flanco de subida validado (Botón soltado y sin rebote)
+      else if (estado_lectura == HIGH && ultimo_estado_estable == LOW) {
+        apagar_led();
+      }
+
+      // Actualizamos el estado estable al nuevo confirmado
+      ultimo_estado_estable = estado_lectura;
+    }
+  }
+
+  return evento_generado;
 }
 
 tipo_evento_t verificarLluvia() {
@@ -156,8 +186,6 @@ tipo_evento_t verificarLluvia() {
 }
 
 tipo_evento_t verificarHumedad() {
-
-
   static uint32_t ultima_lectura = RESET_LECTURA;
 
   if (millis() - ultima_lectura >= INTERVALO) {
@@ -285,6 +313,7 @@ void fsm() {
       Serial.printf("[FSM] -> Forzando Modo Automático.\n");
       motor_control(STOP, LOW, LOW);
       estado_actual = ESTADO_DETENIDO_AUTO;
+      detenido_por_emergencia = false; // Limpiamos por cambio de modo
 
       if (client.connected()) client.publish(TOPIC_MODO, "AUTOMATICO");
       return;
@@ -293,6 +322,7 @@ void fsm() {
       Serial.printf("[FSM] -> Forzando Modo Manual.\n");
       motor_control(STOP, LOW, LOW);
       estado_actual = ESTADO_DETENIDO_MANUAL;
+      detenido_por_emergencia = false; // Limpiamos por cambio de modo
 
       if (client.connected()) client.publish(TOPIC_MODO, "MANUAL");
       return;
@@ -303,6 +333,7 @@ void fsm() {
       case ESTADO_DETENIDO_MANUAL:
         switch (input) {
           case EVT_ABRIR_M:
+            detenido_por_emergencia = false;
             Serial.println("\n=== [MÉTRICAS] CASO B: INICIO DE ACCIÓN (APERTURA) ===");
             initStats();
             estado_actual = ESTADO_ABRIENDO_MANUAL;
@@ -310,9 +341,21 @@ void fsm() {
             motor_control(VELOCIDAD, HIGH, LOW);
             break;
           case EVT_CERRAR_M:
+            detenido_por_emergencia = false;
             estado_actual = ESTADO_CERRANDO_MANUAL;
             client.publish(TOPIC_ESTADO, "CERRANDO");
             motor_control(VELOCIDAD, LOW, HIGH);
+            break;
+          case EVT_EMRGENCE: 
+            // Solo cerramos si veníamos de un freno por emergencia
+            if (detenido_por_emergencia) {
+              detenido_por_emergencia = false;
+              estado_actual = ESTADO_CERRANDO_MANUAL;
+              client.publish(TOPIC_ESTADO, "CERRANDO");
+              motor_control(VELOCIDAD, LOW, HIGH);
+            } else {
+              Serial.println("[FSM] Botón de emergencia ignorado (el sistema ya estaba en reposo normal).");
+            }
             break;
           default: break;
         }
@@ -321,6 +364,7 @@ void fsm() {
       case ESTADO_ABRIENDO_MANUAL:
         switch (input) {
           case EVT_FC_ABIERTO:
+            detenido_por_emergencia = false;
             client.publish(TOPIC_ESTADO, "ABIERTA");
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
@@ -328,9 +372,9 @@ void fsm() {
             Serial.println("=== [MÉTRICAS] FIN DE ACCIÓN =========================\n");
             break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true; // Registramos que paró por emergencia
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
-            // Si hay emergencia, también cerramos la ventana de medición para no dejarla abierta
             finishStats();
             break;
           case EVT_CERRAR_M:
@@ -345,8 +389,13 @@ void fsm() {
       case ESTADO_CERRANDO_MANUAL:
         switch (input) {
           case EVT_FC_CERRADO:
+            detenido_por_emergencia = false;
             client.publish(TOPIC_ESTADO, "CERRADA");
+            estado_actual = ESTADO_DETENIDO_MANUAL;
+            motor_control(STOP, LOW, LOW);
+            break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true; // Registramos que paró por emergencia
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -375,6 +424,7 @@ void fsm() {
             xTimerReset(pirTimer, NO_WAIT);
             break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true; // Se toma como frenado de emergencia
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -386,14 +436,26 @@ void fsm() {
       case ESTADO_DETENIDO_AUTO:
         switch (input) {
           case EVT_LLUVIA:
+            detenido_por_emergencia = false;
             estado_actual = ESTADO_CERRANDO_AUTO;
             client.publish(TOPIC_ESTADO, "CERRANDO");
             motor_control(VELOCIDAD, LOW, HIGH);
             break;
           case EVT_HUMEDAD:
+            detenido_por_emergencia = false;
             estado_actual = ESTADO_ABRIENDO_AUTO;
             client.publish(TOPIC_ESTADO, "ABRIENDO");
             motor_control(VELOCIDAD, HIGH, LOW);
+            break;
+          case EVT_EMRGENCE: 
+            if (detenido_por_emergencia) {
+              detenido_por_emergencia = false;
+              estado_actual = ESTADO_CERRANDO_AUTO;
+              client.publish(TOPIC_ESTADO, "CERRANDO");
+              motor_control(VELOCIDAD, LOW, HIGH);
+            } else {
+              Serial.println("[FSM] Botón de emergencia ignorado (el sistema ya estaba en reposo normal).");
+            }
             break;
           default: break;
         }
@@ -402,8 +464,13 @@ void fsm() {
       case ESTADO_ABRIENDO_AUTO:
         switch (input) {
           case EVT_FC_ABIERTO:
+            detenido_por_emergencia = false;
             client.publish(TOPIC_ESTADO, "ABIERTA");
+            estado_actual = ESTADO_DETENIDO_AUTO;
+            motor_control(STOP, LOW, LOW);
+            break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true;
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -419,11 +486,13 @@ void fsm() {
       case ESTADO_CERRANDO_AUTO:
         switch (input) {
           case EVT_FC_CERRADO:
+            detenido_por_emergencia = false;
             client.publish(TOPIC_ESTADO, "CERRADA");
             motor_control(STOP, LOW, LOW);
             estado_actual = ESTADO_DETENIDO_AUTO;
             break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true;
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -452,6 +521,7 @@ void fsm() {
             xTimerReset(pirTimer, NO_WAIT);
             break;
           case EVT_EMRGENCE:
+            detenido_por_emergencia = true;
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;

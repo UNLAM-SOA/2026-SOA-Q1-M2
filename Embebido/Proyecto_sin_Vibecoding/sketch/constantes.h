@@ -38,12 +38,14 @@
 #define NO_NOTIF            0
 #define TIEMPO_FC           50
 #define TIEMPO_REPOSO       10000
+#define T_ANTIREBOTE        100
 
 #define INI                 0
+#define FALSO               -1
 
 // Config Wifi y MQTT
-#define WIFISSID              "MGL-2.4GHz"
-#define PASSWORD              "leonPlat11*"
+#define WIFISSID              "red_pincha"
+#define PASSWORD              "suzuki15"
 
 
 #define MQTT_SERVER           "broker.emqx.io"
