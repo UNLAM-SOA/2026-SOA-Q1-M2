@@ -18,7 +18,6 @@
 #define PWM_RES            8     
 #define VELOCIDAD          150
 #define STOP               0
-#define INDICE_SENSOR      0
 
 // Definicion de umbral humedad y lluvia
 #define HUMEDAD_UMBRAL_MAX  70
@@ -37,13 +36,20 @@
 #define MAX_EVENTOS         8
 #define NO_WAIT             0
 #define NO_NOTIF            0
+#define TIEMPO_FC           50
+#define TIEMPO_REPOSO       10000
+#define T_ANTIREBOTE        100
+
+#define INI                 0
+#define FALSO               -1
 
 // Config Wifi y MQTT
-#define WIFISSID              "SOA"
-#define PASSWORD              "SOA1234"
+#define WIFISSID              "red_pincha"
+#define PASSWORD              "suzuki15"
 
 
 #define MQTT_SERVER           "broker.emqx.io"
+#define MQTT_NAME             "SmartWindow"
 #define MQTT_USER             "usuario_emqx"
 #define MQTT_PASSWORD         "password_emqx"
 #define MQTT_PORT             1883
@@ -53,6 +59,7 @@
 #define TOPIC_MODO            "/ventana/modo"
 #define TOPIC_COMANDO         "/ventana/comando"  //en el modo manual, abre o cierra
 #define TOPIC_ESTADO          "/ventana/estado"
+
 
 
 #endif

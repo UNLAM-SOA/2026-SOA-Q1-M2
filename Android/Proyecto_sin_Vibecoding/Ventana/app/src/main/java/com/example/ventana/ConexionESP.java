@@ -9,6 +9,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
 
+/**
+ * Clase de utilidad para gestionar la interacción con el ESP32.
+ * Actúa como un puente entre la UI y el MqttService.
+ */
 public class ConexionESP implements SensorEventListener {
     private static final String TAG = "ConexionESP";
     private static ConexionESP instancia;
@@ -45,7 +49,7 @@ public class ConexionESP implements SensorEventListener {
         this.port = prefs.getString("port", "1883");
         this.user = prefs.getString("user", "");
         this.password = prefs.getString("pass", "");
-        Log.d(TAG, "Configuración cargada: Host=" + host + ", Port=" + port + ", User=" + user);
+        Log.d(TAG, "Configuración cargada");
     }
 
     public void guardarConfiguracion(Context context, String host, String port, String user, String password) {
@@ -61,46 +65,55 @@ public class ConexionESP implements SensorEventListener {
         editor.putString("user", user);
         editor.putString("pass", password);
         editor.apply();
-        Log.d(TAG, "Configuración guardada en SharedPreferences y actualizada en ConexionESP");
+        Log.d(TAG, "Configuración guardada");
     }
 
+    /**
+     * Inicia el proceso de conexión enviando un comando al MqttService.
+     */
     public void conectar(Context context) {
-        Log.d(TAG, "Iniciando servicio MqttService para conexión...");
+        Log.d(TAG, "Solicitando conexión al servicio...");
         Intent intent = new Intent(context, MqttService.class);
-        intent.setAction("CONNECT");
+        intent.setAction(MqttService.ACTION_CONNECT);
         intent.putExtra("host", host);
         intent.putExtra("port", port);
         intent.putExtra("user", user);
         intent.putExtra("pass", password);
-        context.startService(intent);
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
     }
 
+    /**
+     * Publica un mensaje genérico mediante el MqttService.
+     */
     public void publicar(Context context, String topico, String mensaje) {
-        Log.d(TAG, "Publicando a través del servicio en " + topico + ": " + mensaje);
         Intent intent = new Intent(context, MqttService.class);
-        intent.setAction("PUBLISH");
+        intent.setAction(MqttService.ACTION_PUBLISH);
         intent.putExtra("topic", topico);
         intent.putExtra("message", mensaje);
         context.startService(intent);
     }
 
     public void abrir(Context context) {
-        Log.d(TAG, "Enviando comando para abrir la ventana...");
         publicar(context, "/ventana/comando", "ABRIR");
-        android.widget.Toast.makeText(context, "Comando enviado", android.widget.Toast.LENGTH_SHORT).show();
+        android.widget.Toast.makeText(context, "Enviando: ABRIR", android.widget.Toast.LENGTH_SHORT).show();
     }
 
     public void cerrar(Context context) {
-        Log.d(TAG, "Enviando comando para cerrar la ventana...");
         publicar(context, "/ventana/comando", "CERRAR");
-        android.widget.Toast.makeText(context, "Comando enviado", android.widget.Toast.LENGTH_SHORT).show();
+        android.widget.Toast.makeText(context, "Enviando: CERRAR", android.widget.Toast.LENGTH_SHORT).show();
     }
 
     public void accionShake(Context context) {
-        Log.d(TAG, "Agitación (Shake) detectada. Enviando comando al ESP32...");
         publicar(context, "/ventana/comando", "SHAKE");
-        android.widget.Toast.makeText(context, "Shake detectado: Acción enviada", android.widget.Toast.LENGTH_SHORT).show();
+        android.widget.Toast.makeText(context, "Shake: Comando enviado", android.widget.Toast.LENGTH_SHORT).show();
     }
+
+    // --- Lógica de Sensores (Shake) ---
 
     public void iniciarDeteccionShake(Context context) {
         this.currentContext = context;
@@ -110,9 +123,6 @@ public class ConexionESP implements SensorEventListener {
                 accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                 if (accelerometer != null) {
                     sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
-                    Log.d(TAG, "Detección de Shake iniciada");
-                } else {
-                    Log.w(TAG, "Acelerómetro no disponible en este dispositivo");
                 }
             }
         } catch (Exception e) {
@@ -123,7 +133,6 @@ public class ConexionESP implements SensorEventListener {
     public void detenerDeteccionShake() {
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
-            Log.d(TAG, "Detección de Shake detenida");
         }
         this.currentContext = null;
     }
@@ -140,23 +149,16 @@ public class ConexionESP implements SensorEventListener {
 
             if (netForce > SHAKE_THRESHOLD_ACCEL) {
                 long now = System.currentTimeMillis();
-                
                 if (lastTimeShake == 0 || (now - lastTimeShake > SHAKE_TIME_LAPSE)) {
                     shakeCount = 0;
                     lastTimeShake = now;
                 }
-                
                 shakeCount++;
                 lastTimeShake = now;
-
-                Log.d(TAG, "Sacudida detectada (" + shakeCount + "/" + SHAKE_COUNT_TRIGGER + "). Fuerza: " + netForce);
-
                 if (shakeCount >= SHAKE_COUNT_TRIGGER) {
                     shakeCount = 0;
                     lastTimeShake = 0;
-                    if (currentContext != null) {
-                        accionShake(currentContext);
-                    }
+                    if (currentContext != null) accionShake(currentContext);
                 }
             }
         }
@@ -172,29 +174,29 @@ public class ConexionESP implements SensorEventListener {
 
     public void mostrarDialogoConfiguracion(final Context context, final Runnable onSaveCallback) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(context);
-        builder.setTitle("Configuración de Conexión");
+        builder.setTitle("Configuración MQTT");
 
         android.widget.LinearLayout layout = new android.widget.LinearLayout(context);
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         layout.setPadding(50, 40, 50, 40);
 
         final android.widget.EditText inputHost = new android.widget.EditText(context);
-        inputHost.setHint("Host");
+        inputHost.setHint("Broker (ej: tcp://broker.emqx.io)");
         inputHost.setText(this.getHost());
         layout.addView(inputHost);
 
         final android.widget.EditText inputPort = new android.widget.EditText(context);
-        inputPort.setHint("Port");
+        inputPort.setHint("Puerto (ej: 1883)");
         inputPort.setText(this.getPort());
         layout.addView(inputPort);
 
         final android.widget.EditText inputUser = new android.widget.EditText(context);
-        inputUser.setHint("User");
+        inputUser.setHint("Usuario");
         inputUser.setText(this.getUser());
         layout.addView(inputUser);
 
         final android.widget.EditText inputPassword = new android.widget.EditText(context);
-        inputPassword.setHint("Password");
+        inputPassword.setHint("Contraseña");
         inputPassword.setText(this.getPassword());
         inputPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(inputPassword);
@@ -202,28 +204,22 @@ public class ConexionESP implements SensorEventListener {
         builder.setView(layout);
 
         builder.setPositiveButton("Guardar", (dialog, which) -> {
-            String hostVal = inputHost.getText().toString().trim();
-            String portVal = inputPort.getText().toString().trim();
-            String userVal = inputUser.getText().toString().trim();
-            String passVal = inputPassword.getText().toString().trim();
+            String h = inputHost.getText().toString().trim();
+            String p = inputPort.getText().toString().trim();
+            String u = inputUser.getText().toString().trim();
+            String pw = inputPassword.getText().toString().trim();
 
-            if (hostVal.isEmpty() || portVal.isEmpty()) {
-                android.widget.Toast.makeText(context, "Host y Puerto son requeridos", android.widget.Toast.LENGTH_SHORT).show();
+            if (h.isEmpty() || p.isEmpty()) {
+                android.widget.Toast.makeText(context, "Broker y Puerto requeridos", android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            guardarConfiguracion(context, hostVal, portVal, userVal, passVal);
-            android.widget.Toast.makeText(context, "Configuración guardada", android.widget.Toast.LENGTH_SHORT).show();
-
+            guardarConfiguracion(context, h, p, u, pw);
             conectar(context);
-
-            if (onSaveCallback != null) {
-                onSaveCallback.run();
-            }
+            if (onSaveCallback != null) onSaveCallback.run();
         });
 
         builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
-
         builder.show();
     }
 }
