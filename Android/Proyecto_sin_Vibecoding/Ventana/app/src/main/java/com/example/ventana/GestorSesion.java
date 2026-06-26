@@ -28,7 +28,7 @@ public class GestorSesion {
         editor.clear();
         editor.apply();
         // Redirigimos a la pantalla de Login (activityEntrada)
-        Intent intent = new Intent(context, ActivityEntrada.class);
+        Intent intent = new Intent(context, MainActivity.class);
 
         // Limpiamos el historial de navegación para que no pueda volver atrás con el botón del celular
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

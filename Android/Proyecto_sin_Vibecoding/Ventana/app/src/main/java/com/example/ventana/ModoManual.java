@@ -1,8 +1,10 @@
 package com.example.ventana;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -11,10 +13,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class ModoManual extends AppCompatActivity implements ConexionESP.CallbackConexion {
+public class ModoManual extends AppCompatActivity {
 
     private TextView tvEstadoVentana, tvModoActual;
+
+    private final BroadcastReceiver mqttReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (MqttService.ACTION_MQTT_MESSAGE.equals(action)) {
+                String topic = intent.getStringExtra(MqttService.EXTRA_TOPIC);
+                String message = intent.getStringExtra(MqttService.EXTRA_MESSAGE);
+                procesarMensaje(topic, message);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,11 +37,9 @@ public class ModoManual extends AppCompatActivity implements ConexionESP.Callbac
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_modo_manual);
 
-        // Vincular vistas de estado
         tvEstadoVentana = findViewById(R.id.tv_manual_estado);
         tvModoActual = findViewById(R.id.tv_modo_actual);
 
-        // Usar clase FuncionesGenericas para configurar saludo, cerrar sesión y diálogo de configuración
         TextView tvSaludo = findViewById(R.id.tv_saludo);
         FuncionesGenericas.configurarSaludoUsuario(this, tvSaludo);
 
@@ -36,83 +49,49 @@ public class ModoManual extends AppCompatActivity implements ConexionESP.Callbac
         Button btnConfigManual = findViewById(R.id.btnConfigManual);
         FuncionesGenericas.configurarBotonConfiguracion(this, btnConfigManual, null);
 
-        // Configuración de los márgenes del sistema (EdgeToEdge)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // 1. Vinculamos el botón de volver de tu XML
         Button btnVolver = findViewById(R.id.btn_volver);
-
-        // 2. Programamos el clic para regresar a Automático (MainActivity)
-        btnVolver.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Notificamos al broker MQTT el cambio de modo usando ConexionESP
-                ConexionESP.getInstancia(ModoManual.this).publicar("/ventana/modo", "AUTOMATICO");
-
-                // Creamos el salto de regreso a MainActivity
-                Intent intent = new Intent(ModoManual.this, ModoAutomatico.class);
-                startActivity(intent);
-
-                // Destruimos modoManual para que no quede de fondo
-                finish();
-            }
+        btnVolver.setOnClickListener(v -> {
+            ConexionESP.getInstancia(ModoManual.this).publicar(ModoManual.this, "/ventana/modo", "AUTOMATICO");
+            Intent intent = new Intent(ModoManual.this, ModoAutomatico.class);
+            startActivity(intent);
+            finish();
         });
 
-        // Vincular btn_abrir y btn_cerrar para controlar la ventana
         Button btnAbrir = findViewById(R.id.btn_abrir);
         Button btnCerrar = findViewById(R.id.btn_cerrar);
 
-        btnAbrir.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ConexionESP.getInstancia(ModoManual.this).abrir(ModoManual.this);
-            }
-        });
-
-        btnCerrar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ConexionESP.getInstancia(ModoManual.this).cerrar(ModoManual.this);
-            }
-        });
+        btnAbrir.setOnClickListener(v -> ConexionESP.getInstancia(ModoManual.this).abrir(ModoManual.this));
+        btnCerrar.setOnClickListener(v -> ConexionESP.getInstancia(ModoManual.this).cerrar(ModoManual.this));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Registrar esta actividad como callback para recibir los mensajes de MQTT
-        ConexionESP.getInstancia(this).setCallback(this);
-
-        // Iniciar la detección de Shake al volver a la pantalla
+        IntentFilter filter = new IntentFilter(MqttService.ACTION_MQTT_MESSAGE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mqttReceiver, filter);
+        
         ConexionESP.getInstancia(this).iniciarDeteccionShake(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Detener la detección de Shake para evitar uso innecesario de sensores
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mqttReceiver);
         ConexionESP.getInstancia(this).detenerDeteccionShake();
     }
 
-    @Override
-    public void onEstadoConexionCambiado(boolean conectado) {
-        // Manejar cambios de estado de la conexión si es necesario
-    }
-
-    @Override
-    public void onMensajeRecibido(String topic, String message) {
-        runOnUiThread(() -> {
-            if (topic.equals("/ventana/estado")) {
-                // Abstraer la lógica del estado de la ventana en FuncionesGenericas
-                FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
-            } else if (topic.equals("/ventana/modo")) {
-                // Abstraer la lógica del modo en FuncionesGenericas
-                FuncionesGenericas.actualizarModoActual(this, tvModoActual, message);
-            }
-        });
+    private void procesarMensaje(String topic, String message) {
+        if (topic == null) return;
+        if (topic.equals("/ventana/estado")) {
+            FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
+        } else if (topic.equals("/ventana/modo")) {
+            FuncionesGenericas.actualizarModoActual(this, tvModoActual, message);
+        }
     }
 }
