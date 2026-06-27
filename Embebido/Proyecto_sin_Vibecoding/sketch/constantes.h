@@ -59,6 +59,8 @@
 #define TOPIC_MODO            "/ventana/modo"
 #define TOPIC_COMANDO         "/ventana/comando"  //en el modo manual, abre o cierra
 #define TOPIC_ESTADO          "/ventana/estado"
+#define TOPIC_EMERGENCIA      "/ventana/emergencia"
+
 
 
 

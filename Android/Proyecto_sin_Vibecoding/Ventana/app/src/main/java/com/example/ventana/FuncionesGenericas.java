@@ -43,23 +43,15 @@ public class FuncionesGenericas {
     // 4. Actualizar visualmente el estado de la ventana (Texto y Colores)
     public static void actualizarEstadoVentana(Activity activity, TextView tvEstado, String estado) {
         if (tvEstado != null) {
+            // No mostrar el mensaje "GET" de solicitud en la UI
+            if ("GET".equals(estado)) {
+                return;
+            }
             tvEstado.setText(estado);
             if (estado.equals("ABRIENDO") || estado.equals("CERRANDO")) {
                 tvEstado.setTextColor(ContextCompat.getColor(activity, R.color.estado_movimiento));
             } else {
                 tvEstado.setTextColor(ContextCompat.getColor(activity, android.R.color.black));
-            }
-        }
-    }
-
-    // 5. Actualizar visualmente el modo actual (Texto y Colores)
-    public static void actualizarModoActual(Activity activity, TextView tvModo, String modo) {
-        if (tvModo != null) {
-            tvModo.setText(modo);
-            if (modo.equals("AUTOMATICO")) {
-                tvModo.setTextColor(ContextCompat.getColor(activity, R.color.estado_automatico));
-            } else {
-                tvModo.setTextColor(ContextCompat.getColor(activity, R.color.estado_manual));
             }
         }
     }

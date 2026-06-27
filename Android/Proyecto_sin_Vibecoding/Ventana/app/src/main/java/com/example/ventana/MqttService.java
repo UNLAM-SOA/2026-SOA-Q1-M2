@@ -5,7 +5,10 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -27,7 +30,7 @@ public class MqttService extends Service {
     private static final String CHANNEL_ID = "MqttServiceChannel";
     private static final int NOTIFICATION_ID = 1;
 
-    // Constantes para Broadcast
+    // 1. Constantes para la comunicación mediante Broadcast
     public static final String ACTION_MQTT_MESSAGE = "com.example.ventana.MQTT_MESSAGE";
     public static final String EXTRA_TOPIC = "topic";
     public static final String EXTRA_MESSAGE = "message";
@@ -35,13 +38,39 @@ public class MqttService extends Service {
     public static final String ACTION_MQTT_STATUS = "com.example.ventana.MQTT_STATUS";
     public static final String EXTRA_CONNECTED = "connected";
 
+    public static final String ACTION_REQUEST_STATE = "com.tuapp.REQUEST_STATE";
+    public static final String ACTION_STATE_RECEIVED = "com.tuapp.STATE_RECEIVED";
+    public static final String EXTRA_ESTADO = "estado";
+    private static final String TOPIC_ESTADO = "/ventana/estado"; // Asegurar que coincida con el ESP32
+    private static final String TOPIC_EMERGENCIA = "/ventana/emergencia";
+    public static final String MESSAGE_EMERGENCIA = "EMERGENCIA";
+
     // Acciones para el Servicio
     public static final String ACTION_CONNECT = "com.example.ventana.CONNECT";
     public static final String ACTION_PUBLISH = "com.example.ventana.PUBLISH";
+    public static final String ACTION_REQUEST_STATUS = "com.example.ventana.REQUEST_STATUS";
 
     private MqttAsyncClient mqttClient;
     private ConectividadManager conectividadManager;
     private String lastHost, lastPort, lastUser, lastPass;
+
+    // 2. Receiver para escuchar las peticiones de las Activities
+    private BroadcastReceiver requestReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (ACTION_REQUEST_STATE.equals(intent.getAction())) {
+                try {
+                    if (mqttClient != null && mqttClient.isConnected()) {
+                        // Al resuscribirse, el broker reenvía automáticamente el mensaje retenido.
+                        // QoS 1 asegura la entrega.
+                        mqttClient.subscribe(TOPIC_ESTADO, 1);
+                    }
+                } catch (MqttException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -49,6 +78,9 @@ public class MqttService extends Service {
         Log.d(TAG, "Servicio MqttService creado");
         createNotificationChannel();
         
+        // Registrar el receiver interno cuando se crea el servicio
+        LocalBroadcastManager.getInstance(this).registerReceiver(requestReceiver, new IntentFilter(ACTION_REQUEST_STATE));
+
         // Inicializar monitoreo de red
         conectividadManager = new ConectividadManager(this, new ConectividadManager.NetworkStatusListener() {
             @Override
@@ -84,6 +116,8 @@ public class MqttService extends Service {
                 String topic = intent.getStringExtra("topic");
                 String message = intent.getStringExtra("message");
                 publish(topic, message);
+            } else if (ACTION_REQUEST_STATUS.equals(action)) {
+                publish(TOPIC_ESTADO, "GET");
             }
         }
         return START_STICKY;
@@ -163,8 +197,15 @@ public class MqttService extends Service {
                 }
 
                 @Override
-                public void messageArrived(String topic, MqttMessage message) {
+                public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String payload = new String(message.getPayload());
+                    
+                    if (topic.equals(TOPIC_ESTADO)) {
+                        Intent intent = new Intent(ACTION_STATE_RECEIVED);
+                        intent.putExtra(EXTRA_ESTADO, payload);
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                    }
+                    
                     notifyMessage(topic, payload);
                 }
 
@@ -183,7 +224,7 @@ public class MqttService extends Service {
     private void subscribeToTopics() {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
-                String[] topics = {"/ventana/humedad", "/ventana/temp", "/ventana/estado", "/ventana/modo"};
+                String[] topics = {"/ventana/humedad", "/ventana/temp", TOPIC_ESTADO, "/ventana/modo"};
                 int[] qos = {1, 1, 1, 1};
                 mqttClient.subscribe(topics, qos);
                 Log.d(TAG, "Suscrito a los tópicos de la ventana");
@@ -224,6 +265,7 @@ public class MqttService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "Servicio MqttService destruyéndose");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(requestReceiver);
         conectividadManager.stopMonitoring();
         try {
             if (mqttClient != null && mqttClient.isConnected()) {

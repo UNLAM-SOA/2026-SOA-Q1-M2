@@ -16,20 +16,31 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class ModoAutomatico extends AppCompatActivity {
 
-    private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana, tvModoActual;
+    private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana;
     
+    // 1. Declarar el receiver
+    private BroadcastReceiver stateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (MqttService.ACTION_STATE_RECEIVED.equals(intent.getAction())) {
+                String estado = intent.getStringExtra(MqttService.EXTRA_ESTADO);
+                // Actualizar la interfaz
+                FuncionesGenericas.actualizarEstadoVentana(ModoAutomatico.this, tvEstadoVentana, estado);
+            }
+        }
+    };
+
     private final BroadcastReceiver mqttReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            String topic = intent.getStringExtra(MqttService.EXTRA_TOPIC);
+            String message = intent.getStringExtra(MqttService.EXTRA_MESSAGE);
             if (MqttService.ACTION_MQTT_STATUS.equals(action)) {
                 boolean conectado = intent.getBooleanExtra(MqttService.EXTRA_CONNECTED, false);
                 actualizarEstadoConexion(conectado);
-            } else if (MqttService.ACTION_MQTT_MESSAGE.equals(action)) {
-                String topic = intent.getStringExtra(MqttService.EXTRA_TOPIC);
-                String message = intent.getStringExtra(MqttService.EXTRA_MESSAGE);
-                procesarMensaje(topic, message);
             }
+            procesarMensaje(topic, message);
         }
     };
 
@@ -42,7 +53,6 @@ public class ModoAutomatico extends AppCompatActivity {
         tvTemp = findViewById(R.id.tv_temp);
         tvHumedad = findViewById(R.id.tv_humedad);
         tvEstadoVentana = findViewById(R.id.tv_estado_ventana);
-        tvModoActual = findViewById(R.id.tv_modo_actual);
 
         TextView tvSaludo = findViewById(R.id.tv_saludo);
         FuncionesGenericas.configurarSaludoUsuario(this, tvSaludo);
@@ -56,10 +66,16 @@ public class ModoAutomatico extends AppCompatActivity {
         Button btn_manual = findViewById(R.id.btn_modo_manual);
         btn_manual.setOnClickListener(v -> {
             ConexionESP.getInstancia(ModoAutomatico.this).publicar(ModoAutomatico.this, "/ventana/modo", "MANUAL");
-            Intent intent = new Intent(ModoAutomatico.this, ModoManual.class);
-            startActivity(intent);
-            finish();
+            // Espera breve para asegurar que el mensaje se publique antes de cambiar de actividad
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                Intent intent = new Intent(ModoAutomatico.this, ModoManual.class);
+                startActivity(intent);
+                finish();
+            }, 150);
         });
+
+        Button btnEmergencia = findViewById(R.id.btn_emergencia);
+        btnEmergencia.setOnClickListener(v -> ConexionESP.getInstancia(ModoAutomatico.this).enviarEmergencia(ModoAutomatico.this));
 
         iniciarServicioMqtt();
     }
@@ -73,6 +89,18 @@ public class ModoAutomatico extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        
+        // 2. Registrar el receiver para escuchar las respuestas del servicio
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            stateReceiver, 
+            new IntentFilter(MqttService.ACTION_STATE_RECEIVED)
+        );
+        
+        // 3. Enviar un intent al MqttService solicitando que se resuscriba.
+        LocalBroadcastManager.getInstance(this).sendBroadcast(
+            new Intent(MqttService.ACTION_REQUEST_STATE)
+        );
+
         IntentFilter filter = new IntentFilter();
         filter.addAction(MqttService.ACTION_MQTT_STATUS);
         filter.addAction(MqttService.ACTION_MQTT_MESSAGE);
@@ -84,6 +112,7 @@ public class ModoAutomatico extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(stateReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mqttReceiver);
         ConexionESP.getInstancia(this).detenerDeteccionShake();
     }
@@ -109,9 +138,6 @@ public class ModoAutomatico extends AppCompatActivity {
                 break;
             case "/ventana/estado":
                 FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
-                break;
-            case "/ventana/modo":
-                FuncionesGenericas.actualizarModoActual(this, tvModoActual, message);
                 break;
         }
     }

@@ -337,13 +337,13 @@ void fsm() {
             Serial.println("\n=== [MÉTRICAS] CASO B: INICIO DE ACCIÓN (APERTURA) ===");
             initStats();
             estado_actual = ESTADO_ABRIENDO_MANUAL;
-            client.publish(TOPIC_ESTADO, "ABRIENDO");
+            client.publish(TOPIC_ESTADO, "ABRIENDO",true);
             motor_control(VELOCIDAD, HIGH, LOW);
             break;
           case EVT_CERRAR_M:
             detenido_por_emergencia = false;
             estado_actual = ESTADO_CERRANDO_MANUAL;
-            client.publish(TOPIC_ESTADO, "CERRANDO");
+            client.publish(TOPIC_ESTADO, "CERRANDO",true);
             motor_control(VELOCIDAD, LOW, HIGH);
             break;
           case EVT_EMRGENCE: 
@@ -351,7 +351,7 @@ void fsm() {
             if (detenido_por_emergencia) {
               detenido_por_emergencia = false;
               estado_actual = ESTADO_CERRANDO_MANUAL;
-              client.publish(TOPIC_ESTADO, "CERRANDO");
+              client.publish(TOPIC_ESTADO, "CERRANDO",true);
               motor_control(VELOCIDAD, LOW, HIGH);
             } else {
               Serial.println("[FSM] Botón de emergencia ignorado (el sistema ya estaba en reposo normal).");
@@ -365,7 +365,7 @@ void fsm() {
         switch (input) {
           case EVT_FC_ABIERTO:
             detenido_por_emergencia = false;
-            client.publish(TOPIC_ESTADO, "ABIERTA");
+            client.publish(TOPIC_ESTADO, "ABIERTA",true);
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             finishStats();
@@ -373,6 +373,7 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             finishStats();
@@ -390,12 +391,13 @@ void fsm() {
         switch (input) {
           case EVT_FC_CERRADO:
             detenido_por_emergencia = false;
-            client.publish(TOPIC_ESTADO, "CERRADA");
+            client.publish(TOPIC_ESTADO, "CERRADA",true);
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -425,6 +427,7 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Se toma como frenado de emergencia
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -465,12 +468,13 @@ void fsm() {
         switch (input) {
           case EVT_FC_ABIERTO:
             detenido_por_emergencia = false;
-            client.publish(TOPIC_ESTADO, "ABIERTA");
+            client.publish(TOPIC_ESTADO, "ABIERTA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -487,12 +491,13 @@ void fsm() {
         switch (input) {
           case EVT_FC_CERRADO:
             detenido_por_emergencia = false;
-            client.publish(TOPIC_ESTADO, "CERRADA");
+            client.publish(TOPIC_ESTADO, "CERRADA",true);
             motor_control(STOP, LOW, LOW);
             estado_actual = ESTADO_DETENIDO_AUTO;
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -522,6 +527,7 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
+            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -547,8 +553,8 @@ void vFSMTask(void *pvParameters) {
 // === Tarea y Callback de MQTT ===
 void callback(char *topic, byte *payload, unsigned int length) {
 
-  Serial.print("Se recibió mensaje en el topico: ");
   String topicStr = String(topic);
+  Serial.print("Se recibió mensaje en el topico: "+ topicStr +"\n");
 
   String mensaje = "";
 
@@ -572,6 +578,22 @@ void callback(char *topic, byte *payload, unsigned int length) {
     }
   }
 
+  if(topicStr == TOPIC_COMANDO){
+    if  (mensaje == "ABRIR"){
+      evento = EVT_ABRIR_M;
+      xQueueSend(queueEvents, &evento, NO_WAIT);
+    } else if (mensaje == "CERRAR"){
+      evento = EVT_CERRAR_M;
+      xQueueSend(queueEvents, &evento, NO_WAIT);
+    }
+  }
+
+  if(topicStr == TOPIC_EMERGENCIA){
+    if  (mensaje == "EMERGENCIA"){
+      evento = EVT_EMRGENCE;
+      xQueueSend(queueEvents, &evento, NO_WAIT);
+    }
+  }
   
 }
 

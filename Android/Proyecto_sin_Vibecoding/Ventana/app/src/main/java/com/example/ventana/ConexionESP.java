@@ -108,9 +108,19 @@ public class ConexionESP implements SensorEventListener {
         android.widget.Toast.makeText(context, "Enviando: CERRAR", android.widget.Toast.LENGTH_SHORT).show();
     }
 
+    public void enviarEmergencia(Context context) {
+        publicar(context, "/ventana/emergencia", "EMERGENCIA");
+        android.widget.Toast.makeText(context, "¡EMERGENCIA ENVIADA!", android.widget.Toast.LENGTH_LONG).show();
+    }
+
+    public void solicitarEstado(Context context) {
+        Intent intent = new Intent(context, MqttService.class);
+        intent.setAction(MqttService.ACTION_REQUEST_STATUS);
+        context.startService(intent);
+    }
+
     public void accionShake(Context context) {
-        publicar(context, "/ventana/comando", "SHAKE");
-        android.widget.Toast.makeText(context, "Shake: Comando enviado", android.widget.Toast.LENGTH_SHORT).show();
+        enviarEmergencia(context);
     }
 
     // --- Lógica de Sensores (Shake) ---
