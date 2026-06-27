@@ -166,7 +166,6 @@ tipo_evento_t verificarEmergencia() {
       ultimo_estado_estable = estado_lectura;
     }
   }
-
   return evento_generado;
 }
 
@@ -373,7 +372,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true); 
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             finishStats();
@@ -397,7 +397,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true); 
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -427,7 +428,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Se toma como frenado de emergencia
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true); 
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -474,7 +476,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -497,7 +500,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -527,7 +531,8 @@ void fsm() {
             break;
           case EVT_EMRGENCE:
             detenido_por_emergencia = true;
-            client.publish(TOPIC_EMERGENCIA, "EMERGENCIA",true);
+            // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -588,9 +593,11 @@ void callback(char *topic, byte *payload, unsigned int length) {
     }
   }
 
+  // EL TÓPICO DE EMERGENCIA ORIGINAL SE MANTIENE PARA ESCUCHAR COMANDOS DE LA APP
   if(topicStr == TOPIC_EMERGENCIA){
     if  (mensaje == "EMERGENCIA"){
       evento = EVT_EMRGENCE;
+      Serial.print("[COMANDO VIA APP] EMERGENCIA...");
       xQueueSend(queueEvents, &evento, NO_WAIT);
     }
   }
@@ -618,6 +625,7 @@ void vMQTTTask(void *pvParameters) {
         Serial.println("[MQTT] Conectandose");
         client.subscribe(TOPIC_MODO);
         client.subscribe(TOPIC_COMANDO);
+        client.subscribe(TOPIC_EMERGENCIA); // Seguimos suscribiéndonos al original para comandos
       } else {
         vTaskDelay(pdMS_TO_TICKS(5000));
       }

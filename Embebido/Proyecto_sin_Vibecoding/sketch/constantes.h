@@ -38,7 +38,7 @@
 #define NO_NOTIF            0
 #define TIEMPO_FC           50
 #define TIEMPO_REPOSO       10000
-#define T_ANTIREBOTE        100
+#define T_ANTIREBOTE        150
 
 #define INI                 0
 #define FALSO               -1
@@ -50,16 +50,18 @@
 
 #define MQTT_SERVER           "broker.emqx.io"
 #define MQTT_NAME             "SmartWindow"
-#define MQTT_USER             "usuario_emqx"
-#define MQTT_PASSWORD         "password_emqx"
+#define MQTT_USER             ""
+#define MQTT_PASSWORD         ""
 #define MQTT_PORT             1883
 
-#define TOPIC_HUMEDAD         "/ventana/humedad"
-#define TOPIC_TEMP            "/ventana/temp"
-#define TOPIC_MODO            "/ventana/modo"
-#define TOPIC_COMANDO         "/ventana/comando"  //en el modo manual, abre o cierra
-#define TOPIC_ESTADO          "/ventana/estado"
+#define TOPIC_HUMEDAD             "/ventana/humedad"
+#define TOPIC_TEMP                "/ventana/temp"
+#define TOPIC_MODO                "/ventana/modo"
+#define TOPIC_COMANDO             "/ventana/comando"  //en el modo manual, abre o cierra
+#define TOPIC_ESTADO              "/ventana/estado"
 #define TOPIC_EMERGENCIA      "/ventana/emergencia"
+#define TOPIC_EMERGENCIA_ESTADO   "/ventana/estado/emergencia"
+
 
 
 
