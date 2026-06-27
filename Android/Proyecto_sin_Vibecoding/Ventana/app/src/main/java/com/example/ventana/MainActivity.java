@@ -108,9 +108,10 @@ public class MainActivity extends AppCompatActivity {
     private void iniciarSesionExitosa(String nombreUsuario) {
         Toast.makeText(this, "¡Ingreso exitoso! Bienvenido", Toast.LENGTH_SHORT).show();
 
+        GestorSesion.guardarUsuario(MainActivity.this, nombreUsuario);
         Intent intent = new Intent(MainActivity.this, ModoAutomatico.class);
         startActivity(intent);
-        GestorSesion.guardarUsuario(MainActivity.this, nombreUsuario);
+
 
         // Cerramos esta pantalla para que no se pueda volver atrás con el botón retroceder del celular
         finish();
