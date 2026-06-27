@@ -373,7 +373,8 @@ void fsm() {
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
             // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
-            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true); 
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
+            client.publish(TOPIC_ESTADO, "BLOQUEADO", true);  
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             finishStats();
@@ -398,7 +399,8 @@ void fsm() {
           case EVT_EMRGENCE:
             detenido_por_emergencia = true; // Registramos que paró por emergencia
             // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
-            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true); 
+            client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
+            client.publish(TOPIC_ESTADO, "BLOQUEADO", true); 
             estado_actual = ESTADO_DETENIDO_MANUAL;
             motor_control(STOP, LOW, LOW);
             break;
@@ -409,6 +411,7 @@ void fsm() {
             break;
           case EVT_PIR_ON:
             estado_actual = ESTADO_BLOQUEADO_MANUAL;
+            client.publish(TOPIC_ESTADO, "BLOQUEADO");
             motor_control(STOP, LOW, LOW);
             xTimerStart(pirTimer, NO_WAIT);
             break;
@@ -478,6 +481,7 @@ void fsm() {
             detenido_por_emergencia = true;
             // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
             client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
+            client.publish(TOPIC_ESTADO, "BLOQUEADO", true); 
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -502,6 +506,7 @@ void fsm() {
             detenido_por_emergencia = true;
             // ACÁ USAMOS EL NUEVO TOPICO DE ESTADO
             client.publish(TOPIC_EMERGENCIA_ESTADO, "EMERGENCIA",true);
+            client.publish(TOPIC_ESTADO, "BLOQUEADO", true); 
             estado_actual = ESTADO_DETENIDO_AUTO;
             motor_control(STOP, LOW, LOW);
             break;
@@ -512,6 +517,7 @@ void fsm() {
             break;
           case EVT_PIR_ON:
             estado_actual = ESTADO_BLOQUEADO_AUTO;
+            client.publish(TOPIC_ESTADO, "BLOQUEADO");
             motor_control(STOP, LOW, LOW);
             xTimerStart(pirTimer, NO_WAIT);
             break;
