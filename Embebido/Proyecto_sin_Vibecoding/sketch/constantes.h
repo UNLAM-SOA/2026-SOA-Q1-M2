@@ -16,14 +16,14 @@
 // Parámetros PWM y Motor
 #define PWM_FREQ           5000  
 #define PWM_RES            8     
-#define VELOCIDAD          150
+#define VELOCIDAD          180
 #define STOP               0
 
 // Definicion de umbral humedad y lluvia
 #define HUMEDAD_UMBRAL_MAX  70
 #define LLUVIA_MIN_VALIDA   500
 #define HUMEDAD_MIN_VALIDA  0
-#define INTERVALO           2000
+#define INTERVALO           2500
 #define RESET_LECTURA       0
 #define PORCENTAJE_BASE     100
 

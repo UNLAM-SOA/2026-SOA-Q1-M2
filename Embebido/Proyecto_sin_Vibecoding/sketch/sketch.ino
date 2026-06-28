@@ -83,7 +83,7 @@ int leer_humedad() {
   if (dht.getStatus() == DHTesp::ERROR_NONE) {
     
     Serial.printf("[Sensor] Temperatura: %.1f °C | Humedad: %.1f %%\n", data.temperature, data.humidity);
-
+    
     // MQTT (Solo si hay conexión)
     if (client.connected()) {
       String hum_str = String(data.humidity, 1);
@@ -94,6 +94,7 @@ int leer_humedad() {
     }
   } else {
     Serial.println("[Sensor] Error de lectura en el DHT11 (Ignorando ciclo)");
+  
     return -1;  
   }
 
@@ -198,10 +199,15 @@ tipo_evento_t verificarHumedad() {
     }
 
     // Análisis de umbrales para la máquina de estados
-    if (humedad_actual > HUMEDAD_UMBRAL_MAX && humedad_alta == false) {
-      Serial.printf("[FSM] Humedad superó el umbral (%d%%). Lanzando evento.\n", humedad_actual);
-      humedad_alta = true;
-      return EVT_HUMEDAD;
+    if (humedad_actual > HUMEDAD_UMBRAL_MAX) {
+      // Lanzar el evento SI: 
+      // 1. Es la primera vez que superamos el umbral
+      // 2. O la ventana está físicamente CERRADA (reintento inteligente)
+      if (humedad_alta == false || digitalRead(GPIO_FC_C) == HIGH) {
+        Serial.printf("[FSM] Humedad alta (%d%%) y ventana cerrada. Lanzando evento.\n", humedad_actual);
+        humedad_alta = true;
+        return EVT_HUMEDAD;
+      }
     } else if (humedad_actual < HUMEDAD_UMBRAL_MAX && humedad_alta == true) {
       Serial.printf("[FSM] Humedad bajó del umbral (%d%%).\n", humedad_actual);
       humedad_alta = false;
@@ -313,6 +319,9 @@ void fsm() {
       motor_control(STOP, LOW, LOW);
       estado_actual = ESTADO_DETENIDO_AUTO;
       detenido_por_emergencia = false; // Limpiamos por cambio de modo
+
+      humedad_alta = false; 
+      lluvia = false;
 
       if (client.connected()) client.publish(TOPIC_MODO, "AUTOMATICO");
       return;
