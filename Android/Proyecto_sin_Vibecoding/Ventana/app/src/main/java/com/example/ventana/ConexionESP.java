@@ -31,7 +31,11 @@ public class ConexionESP implements SensorEventListener {
     private long lastTimeShake = 0;
     private int shakeCount = 0;
     private Context currentContext;
-
+    private boolean ventanaBloqueada = false;
+    private long ultimoShakeExitoso = 0;
+    public void setVentanaBloqueada(boolean bloqueada) {
+        this.ventanaBloqueada = bloqueada;
+    }
     private ConexionESP(Context context) {
         cargarConfiguracion(context);
     }
@@ -120,6 +124,16 @@ public class ConexionESP implements SensorEventListener {
     }
 
     public void accionShake(Context context) {
+        if (ventanaBloqueada) {
+            return; // No hace nada si está bloqueada
+        }
+        
+        long ahora = System.currentTimeMillis();
+        if (ahora - ultimoShakeExitoso < 5000) {
+            return; // Cooldown de 5 segundos
+        }
+        ultimoShakeExitoso = ahora;
+
         enviarEmergencia(context);
     }
 

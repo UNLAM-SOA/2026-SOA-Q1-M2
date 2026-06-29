@@ -18,7 +18,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 public class ModoManual extends AppCompatActivity {
 
     private TextView tvEstadoVentana;
-    private Button btnAbrir, btnCerrar;
+    private Button btnAbrir, btnCerrar, btnEmergencia;
 
     // 1. Declarar el receiver
     private BroadcastReceiver stateReceiver = new BroadcastReceiver() {
@@ -26,9 +26,16 @@ public class ModoManual extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if (MqttService.ACTION_STATE_RECEIVED.equals(intent.getAction())) {
                 String estado = intent.getStringExtra(MqttService.EXTRA_ESTADO);
-                // Actualizar la interfaz
-                FuncionesGenericas.actualizarEstadoVentana(ModoManual.this, tvEstadoVentana, estado);
-                actualizarBotonesSegunEstado(estado);
+                FuncionesGenericas.actualizarEstadoVentana(ModoManual.this, tvEstadoVentana, estado, btnEmergencia);
+
+                // Mover esto AQUÍ ADENTRO (antes de cerrar el primer if):
+                if (estado != null) {
+                    if (estado.equalsIgnoreCase("BLOQUEADO")) {
+                        ConexionESP.getInstancia(ModoManual.this).setVentanaBloqueada(true);
+                    } else {
+                        ConexionESP.getInstancia(ModoManual.this).setVentanaBloqueada(false);
+                    }
+                }
             }
         }
     };
@@ -86,7 +93,7 @@ public class ModoManual extends AppCompatActivity {
         btnAbrir.setOnClickListener(v -> ConexionESP.getInstancia(ModoManual.this).abrir(ModoManual.this));
         btnCerrar.setOnClickListener(v -> ConexionESP.getInstancia(ModoManual.this).cerrar(ModoManual.this));
 
-        Button btnEmergencia = findViewById(R.id.btn_emergencia);
+        btnEmergencia = findViewById(R.id.btn_emergencia);
         btnEmergencia.setOnClickListener(v -> ConexionESP.getInstancia(ModoManual.this).enviarEmergencia(ModoManual.this));
     }
 
@@ -122,8 +129,13 @@ public class ModoManual extends AppCompatActivity {
     private void procesarMensaje(String topic, String message) {
         if (topic == null) return;
         if (topic.equals("/ventana/estado")) {
-            FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
+            FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message, btnEmergencia);
             actualizarBotonesSegunEstado(message);
+            if (message.equalsIgnoreCase("BLOQUEADO")) {
+                ConexionESP.getInstancia(this).setVentanaBloqueada(true);
+            } else {
+                ConexionESP.getInstancia(this).setVentanaBloqueada(false);
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 package com.example.ventana;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -41,17 +43,36 @@ public class FuncionesGenericas {
     }
 
     // 4. Actualizar visualmente el estado de la ventana (Texto y Colores)
-    public static void actualizarEstadoVentana(Activity activity, TextView tvEstado, String estado) {
+    public static void actualizarEstadoVentana(Activity activity, TextView tvEstado, String estado, Button btnEmergencia) {
         if (tvEstado != null) {
-            // No mostrar el mensaje "GET" de solicitud en la UI
-            if ("GET".equals(estado)) {
-                return;
-            }
             tvEstado.setText(estado);
+            
+            // Limpiar fondo
+            tvEstado.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            android.view.View contenedorPadre = (android.view.View) tvEstado.getParent();
+            if (contenedorPadre != null) {
+                contenedorPadre.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            }
+
             if (estado.equals("ABRIENDO") || estado.equals("CERRANDO")) {
                 tvEstado.setTextColor(ContextCompat.getColor(activity, R.color.estado_movimiento));
+            } else if (estado.equalsIgnoreCase("BLOQUEADO")) {
+                // Texto en rojo
+                tvEstado.setTextColor(ContextCompat.getColor(activity, R.color.color_rojo));
             } else {
                 tvEstado.setTextColor(ContextCompat.getColor(activity, android.R.color.black));
+            }
+        }
+
+        if (btnEmergencia != null) {
+            if (estado.equalsIgnoreCase("BLOQUEADO")) {
+                btnEmergencia.setText("DESBLOQUEAR");
+                btnEmergencia.setBackgroundTintList(ColorStateList.valueOf(Color.GREEN));
+                btnEmergencia.setTextColor(Color.BLACK);
+            } else {
+                btnEmergencia.setText("EMERGENCIA");
+                btnEmergencia.setBackgroundTintList(ColorStateList.valueOf(Color.RED));
+                btnEmergencia.setTextColor(Color.WHITE);
             }
         }
     }

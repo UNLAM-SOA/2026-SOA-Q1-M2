@@ -17,15 +17,22 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 public class ModoAutomatico extends AppCompatActivity {
 
     private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana;
-    
+    private Button btnEmergencia;
     // 1. Declarar el receiver
     private BroadcastReceiver stateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (MqttService.ACTION_STATE_RECEIVED.equals(intent.getAction())) {
                 String estado = intent.getStringExtra(MqttService.EXTRA_ESTADO);
-                // Actualizar la interfaz
-                FuncionesGenericas.actualizarEstadoVentana(ModoAutomatico.this, tvEstadoVentana, estado);
+
+                FuncionesGenericas.actualizarEstadoVentana(ModoAutomatico.this, tvEstadoVentana, estado, btnEmergencia);
+                if (estado != null) {
+                    if (estado.equalsIgnoreCase("BLOQUEADO")) {
+                        ConexionESP.getInstancia(ModoAutomatico.this).setVentanaBloqueada(true);
+                    } else {
+                        ConexionESP.getInstancia(ModoAutomatico.this).setVentanaBloqueada(false);
+                    }
+                }
             }
         }
     };
@@ -74,7 +81,7 @@ public class ModoAutomatico extends AppCompatActivity {
             }, 150);
         });
 
-        Button btnEmergencia = findViewById(R.id.btn_emergencia);
+        btnEmergencia = findViewById(R.id.btn_emergencia);
         btnEmergencia.setOnClickListener(v -> ConexionESP.getInstancia(ModoAutomatico.this).enviarEmergencia(ModoAutomatico.this));
 
         iniciarServicioMqtt();
@@ -123,7 +130,7 @@ public class ModoAutomatico extends AppCompatActivity {
             tvMqttStatus.setTextColor(ContextCompat.getColor(this, R.color.estado_conectado));
         } else {
             tvMqttStatus.setText("Desconectado");
-            tvMqttStatus.setTextColor(ContextCompat.getColor(this, R.color.estado_desconectado));
+            tvMqttStatus.setTextColor(ContextCompat.getColor(this, R.color.color_rojo));
         }
     }
 
@@ -137,7 +144,12 @@ public class ModoAutomatico extends AppCompatActivity {
                 tvHumedad.setText("Humedad: " + message + " %");
                 break;
             case "/ventana/estado":
-                FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message);
+                FuncionesGenericas.actualizarEstadoVentana(this, tvEstadoVentana, message, btnEmergencia);
+                if (message.equalsIgnoreCase("BLOQUEADO")) {
+                    ConexionESP.getInstancia(this).setVentanaBloqueada(true);
+                } else {
+                    ConexionESP.getInstancia(this).setVentanaBloqueada(false);
+                }
                 break;
         }
     }
