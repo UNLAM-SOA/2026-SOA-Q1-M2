@@ -86,8 +86,8 @@ public class ModoAutomatico extends AppCompatActivity {
         btnEmergencia.setOnClickListener(v -> {
             String textoActual = btnEmergencia.getText().toString();
             if (textoActual.equalsIgnoreCase("DESBLOQUEAR")) {
-                ConexionESP.getInstancia(ModoAutomatico.this).publicar(ModoAutomatico.this, "/ventana/emergencia", "DESBLOQUEAR");
-                android.widget.Toast.makeText(ModoAutomatico.this, "Enviando: DESBLOQUEAR", android.widget.Toast.LENGTH_SHORT).show();
+                ConexionESP.getInstancia(ModoAutomatico.this).publicar(ModoAutomatico.this, "/ventana/emergencia", "EMERGENCIA");
+
             } else {
                 ConexionESP.getInstancia(ModoAutomatico.this).enviarEmergencia(ModoAutomatico.this);
             }

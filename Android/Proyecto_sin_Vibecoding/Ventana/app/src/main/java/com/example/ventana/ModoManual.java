@@ -97,8 +97,8 @@ public class ModoManual extends AppCompatActivity {
         btnEmergencia.setOnClickListener(v -> {
             String textoActual = btnEmergencia.getText().toString();
             if (textoActual.equalsIgnoreCase("DESBLOQUEAR")) {
-                ConexionESP.getInstancia(ModoManual.this).publicar(ModoManual.this, "/ventana/emergencia", "DESBLOQUEAR");
-                android.widget.Toast.makeText(ModoManual.this, "Enviando: DESBLOQUEAR", android.widget.Toast.LENGTH_SHORT).show();
+                ConexionESP.getInstancia(ModoManual.this).publicar(ModoManual.this, "/ventana/emergencia", "EMERGENCIA");
+
             } else {
                 ConexionESP.getInstancia(ModoManual.this).enviarEmergencia(ModoManual.this);
             }
