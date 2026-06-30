@@ -21,7 +21,7 @@ public class ModoManual extends AppCompatActivity {
     private Button btnAbrir, btnCerrar, btnEmergencia;
 
     // 1. Declarar el receiver
-    private BroadcastReceiver stateReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver stateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (MqttService.ACTION_STATE_RECEIVED.equals(intent.getAction())) {

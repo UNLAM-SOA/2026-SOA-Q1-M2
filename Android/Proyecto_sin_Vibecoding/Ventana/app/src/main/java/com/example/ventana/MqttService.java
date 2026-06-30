@@ -34,16 +34,12 @@ public class MqttService extends Service {
     public static final String ACTION_MQTT_MESSAGE = "com.example.ventana.MQTT_MESSAGE";
     public static final String EXTRA_TOPIC = "topic";
     public static final String EXTRA_MESSAGE = "message";
-    
     public static final String ACTION_MQTT_STATUS = "com.example.ventana.MQTT_STATUS";
     public static final String EXTRA_CONNECTED = "connected";
-
     public static final String ACTION_REQUEST_STATE = "com.tuapp.REQUEST_STATE";
     public static final String ACTION_STATE_RECEIVED = "com.tuapp.STATE_RECEIVED";
     public static final String EXTRA_ESTADO = "estado";
     private static final String TOPIC_ESTADO = "/ventana/estado"; // Asegurar que coincida con el ESP32
-    private static final String TOPIC_EMERGENCIA = "/ventana/emergencia";
-    public static final String MESSAGE_EMERGENCIA = "EMERGENCIA";
 
     // Acciones para el Servicio
     public static final String ACTION_CONNECT = "com.example.ventana.CONNECT";
@@ -55,7 +51,7 @@ public class MqttService extends Service {
     private String lastHost, lastPort, lastUser, lastPass;
 
     // 2. Receiver para escuchar las peticiones de las Activities
-    private BroadcastReceiver requestReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver requestReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ACTION_REQUEST_STATE.equals(intent.getAction())) {
@@ -66,7 +62,7 @@ public class MqttService extends Service {
                         mqttClient.subscribe(TOPIC_ESTADO, 1);
                     }
                 } catch (MqttException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Error al suscribirse al tópico de estado al recibir ACTION_REQUEST_STATE", e);
                 }
             }
         }
@@ -197,7 +193,7 @@ public class MqttService extends Service {
                 }
 
                 @Override
-                public void messageArrived(String topic, MqttMessage message) throws Exception {
+                public void messageArrived(String topic, MqttMessage message) {
                     String payload = new String(message.getPayload());
                     
                     if (topic.equals(TOPIC_ESTADO)) {

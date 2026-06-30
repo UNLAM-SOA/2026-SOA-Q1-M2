@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+import java.lang.ref.WeakReference;
 
 /**
  * Clase de utilidad para gestionar la interacción con el ESP32.
@@ -24,13 +25,12 @@ public class ConexionESP implements SensorEventListener {
 
     // Variables para la detección del Shake
     private SensorManager sensorManager;
-    private Sensor accelerometer;
     private static final float SHAKE_THRESHOLD_ACCEL = 12.0f;
     private static final int SHAKE_TIME_LAPSE = 500;
     private static final int SHAKE_COUNT_TRIGGER = 3;
     private long lastTimeShake = 0;
     private int shakeCount = 0;
-    private Context currentContext;
+    private WeakReference<Context> currentContextRef;
     private boolean ventanaBloqueada = false;
     private long ultimoShakeExitoso = 0;
     public void setVentanaBloqueada(boolean bloqueada) {
@@ -117,12 +117,6 @@ public class ConexionESP implements SensorEventListener {
         android.widget.Toast.makeText(context, "¡EMERGENCIA ENVIADA!", android.widget.Toast.LENGTH_LONG).show();
     }
 
-    public void solicitarEstado(Context context) {
-        Intent intent = new Intent(context, MqttService.class);
-        intent.setAction(MqttService.ACTION_REQUEST_STATUS);
-        context.startService(intent);
-    }
-
     public void accionShake(Context context) {
         if (ventanaBloqueada) {
             return; // No hace nada si está bloqueada
@@ -140,11 +134,11 @@ public class ConexionESP implements SensorEventListener {
     // --- Lógica de Sensores (Shake) ---
 
     public void iniciarDeteccionShake(Context context) {
-        this.currentContext = context;
+        this.currentContextRef = new WeakReference<>(context);
         try {
             sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
             if (sensorManager != null) {
-                accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                 if (accelerometer != null) {
                     sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
                 }
@@ -158,7 +152,7 @@ public class ConexionESP implements SensorEventListener {
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }
-        this.currentContext = null;
+        this.currentContextRef = null;
     }
 
     @Override
@@ -182,7 +176,12 @@ public class ConexionESP implements SensorEventListener {
                 if (shakeCount >= SHAKE_COUNT_TRIGGER) {
                     shakeCount = 0;
                     lastTimeShake = 0;
-                    if (currentContext != null) accionShake(currentContext);
+                    if (currentContextRef != null) {
+                        Context context = currentContextRef.get();
+                        if (context != null) {
+                            accionShake(context);
+                        }
+                    }
                 }
             }
         }

@@ -1,12 +1,13 @@
 package com.example.ventana;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
+@SuppressLint("SetTextI18n") //clase que suprime el warning que pide que no hacodees para que la app pueda ser traducida en el futuro
 
 public class FuncionesGenericas {
 
@@ -21,24 +22,14 @@ public class FuncionesGenericas {
     // 2. Configurar el botón de Salir (Cerrar sesión)
     public static void configurarBotonSalir(final Activity activity, Button btnSalir) {
         if (btnSalir != null) {
-            btnSalir.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    GestorSesion.cerrarSesion(activity);
-                }
-            });
+            btnSalir.setOnClickListener(v -> GestorSesion.cerrarSesion(activity));
         }
     }
 
     // 3. Configurar el botón de Configuración
     public static void configurarBotonConfiguracion(final Activity activity, Button btnConfig, final Runnable onSaveCallback) {
         if (btnConfig != null) {
-            btnConfig.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ConexionESP.getInstancia(activity).mostrarDialogoConfiguracion(activity, onSaveCallback);
-                }
-            });
+            btnConfig.setOnClickListener(v -> ConexionESP.getInstancia(activity).mostrarDialogoConfiguracion(activity, onSaveCallback));
         }
     }
 

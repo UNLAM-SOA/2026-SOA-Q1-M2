@@ -1,5 +1,6 @@
 package com.example.ventana;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,13 +14,13 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
+@SuppressLint("SetTextI18n") //clase que suprime el warning que pide que no hacodees para que la app pueda ser traducida en el futuro
 public class ModoAutomatico extends AppCompatActivity {
 
     private TextView tvMqttStatus, tvTemp, tvHumedad, tvEstadoVentana;
     private Button btnEmergencia;
     // 1. Declarar el receiver
-    private BroadcastReceiver stateReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver stateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (MqttService.ACTION_STATE_RECEIVED.equals(intent.getAction())) {

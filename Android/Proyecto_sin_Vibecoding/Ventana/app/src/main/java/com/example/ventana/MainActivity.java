@@ -1,11 +1,9 @@
 package com.example.ventana;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -21,12 +19,12 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.util.Objects;
+
 public class MainActivity extends AppCompatActivity {
 
     // Declaramos las variables para los componentes visuales
     private TextInputEditText etUser, etPassword;
-    private Button btnLogin;
-    private TextView tvForgotPassword, tvCrearUsuario;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,39 +43,24 @@ public class MainActivity extends AppCompatActivity {
         // Enlazamos los componentes del XML con Java
         etUser = findViewById(R.id.etUser);
         etPassword = findViewById(R.id.etPassword);
-        btnLogin = findViewById(R.id.btnLogin);
-        tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        tvCrearUsuario = findViewById(R.id.tvCrearUsuario);
+        Button btnLogin = findViewById(R.id.btnLogin);
+        TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        TextView tvCrearUsuario = findViewById(R.id.tvCrearUsuario);
 
 
         // Logica del boton Entrar
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                validarIngreso();
-            }
-        });
+        btnLogin.setOnClickListener(v -> validarIngreso());
 
 
-        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mostrarDialogoRecuperarClave();
-            }
-        });
+        tvForgotPassword.setOnClickListener(v -> mostrarDialogoRecuperarClave());
 
-        tvCrearUsuario.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mostrarDialogoCrearUsuario();
-            }
-        });
+        tvCrearUsuario.setOnClickListener(v -> mostrarDialogoCrearUsuario());
     }
 
     // Metodo para validar el admin admin hardcodeado
     private void validarIngreso() {
-        String usuario = etUser.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
+        String usuario = Objects.requireNonNull(etUser.getText()).toString().trim();
+        String password = Objects.requireNonNull(etPassword.getText()).toString().trim();
         if (usuario.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
@@ -94,14 +77,10 @@ public class MainActivity extends AppCompatActivity {
             Usuario usuarioDb = db.usuarioDao().login(usuario, password);
             if (usuarioDb != null) {
                 // Si el usuario existe en la DB y la contraseña coincide
-                runOnUiThread(() -> {
-                    iniciarSesionExitosa(usuario);
-                });
+                runOnUiThread(() -> iniciarSesionExitosa(usuario));
             } else {
                 // Si no existe o la contraseña es incorrecta
-                runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
-                });
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
@@ -142,44 +121,34 @@ public class MainActivity extends AppCompatActivity {
         layout.addView(inputPassword);
         builder.setView(layout);
         // Botón Confirmar / Crear
-        builder.setPositiveButton("Crear", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String user = inputUser.getText().toString().trim();
-                String pass = inputPassword.getText().toString().trim();
-                // Validación: campos vacíos
-                if (user.isEmpty() || pass.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                // Realizamos la validación y el guardado en un hilo de fondo (Thread)
-                new Thread(() -> {
-                    AppBaseDatos db = AppBaseDatos.getInstance(MainActivity.this);
-                    Usuario usuarioExistente = db.usuarioDao().obtenerPorNombre(user);
-                    if (usuarioExistente != null) {
-                        // Si ya existe, avisamos en pantalla
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "El usuario ya existe", Toast.LENGTH_LONG).show();
-                        });
-                    } else {
-                        // Si no existe, lo creamos y lo guardamos
-                        Usuario nuevoUsuario = new Usuario();
-                        nuevoUsuario.nombreUsuario = user;
-                        nuevoUsuario.contrasena = pass;
-                        db.usuarioDao().insertar(nuevoUsuario);
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "Usuario creado con éxito", Toast.LENGTH_LONG).show();
-                        });
-                    }
-                }).start();
+        builder.setPositiveButton("Crear", (dialog, which) -> {
+            String user = inputUser.getText().toString().trim();
+            String pass = inputPassword.getText().toString().trim();
+            // Validación: campos vacíos
+            if (user.isEmpty() || pass.isEmpty()) {
+                Toast.makeText(MainActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+                return;
             }
+            // Realizamos la validación y el guardado en un hilo de fondo (Thread)
+            new Thread(() -> {
+                AppBaseDatos db = AppBaseDatos.getInstance(MainActivity.this);
+                Usuario usuarioExistente = db.usuarioDao().obtenerPorNombre(user);
+                if (usuarioExistente != null) {
+                    // Si ya existe, avisamos en pantalla
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "El usuario ya existe", Toast.LENGTH_LONG).show());
+                } else {
+                    // Si no existe, lo creamos y lo guardamos
+                    Usuario nuevoUsuario = new Usuario();
+                    nuevoUsuario.nombreUsuario = user;
+                    nuevoUsuario.contrasena = pass;
+                    db.usuarioDao().insertar(nuevoUsuario);
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Usuario creado con éxito", Toast.LENGTH_LONG).show());
+                }
+            }).start();
         });
         // Botón Cancelar
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel(); // Cierra el pop-up
-            }
+        builder.setNegativeButton("Cancelar", (dialog, which) -> {
+            dialog.cancel(); // Cierra el pop-up
         });
         // Mostramos el diálogo en pantalla
         builder.show();
@@ -201,25 +170,19 @@ public class MainActivity extends AppCompatActivity {
         builder.setView(inputEmail);
 
         // Botón Confirmar / Enviar
-        builder.setPositiveButton("Enviar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String email = inputEmail.getText().toString().trim();
-                if (!email.isEmpty()) {
-                    // Por ahora solo emula la acción con un cartelito en pantalla
-                    Toast.makeText(MainActivity.this, "Correo enviado a: " + email, Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "Debes ingresar un correo válido", Toast.LENGTH_SHORT).show();
-                }
+        builder.setPositiveButton("Enviar", (dialog, which) -> {
+            String email = inputEmail.getText().toString().trim();
+            if (!email.isEmpty()) {
+                // Por ahora solo emula la acción con un cartelito en pantalla
+                Toast.makeText(MainActivity.this, "Correo enviado a: " + email, Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(MainActivity.this, "Debes ingresar un correo válido", Toast.LENGTH_SHORT).show();
             }
         });
 
         // Botón Cancelar
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel(); // Cierra el pop-up sin hacer nada
-            }
+        builder.setNegativeButton("Cancelar", (dialog, which) -> {
+            dialog.cancel(); // Cierra el pop-up sin hacer nada
         });
 
         // Mostramos el cuadro en pantalla
