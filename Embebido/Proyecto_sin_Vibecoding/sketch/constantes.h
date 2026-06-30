@@ -40,13 +40,18 @@
 #define TIEMPO_FC           50
 #define TIEMPO_REPOSO       10000
 #define T_ANTIREBOTE        150
+#define T_WIFI              1000
+#define T_MQTT              5000
+#define T_TASK              20
+#define T_LOOP              100
+#define T_FSM_INI           1
 
 #define INI                 0
 #define FALSO               -1
 
 // Config Wifi y MQTT
-#define WIFISSID              "red_pincha"
-#define PASSWORD              "suzuki15"
+#define WIFISSID              "MGL-2.4GHz"
+#define PASSWORD              "leonPlat11*"
 
 
 #define MQTT_SERVER           "broker.emqx.io"

@@ -566,7 +566,7 @@ void vFSMTask(void *pvParameters) {
   Serial.printf("[Sistema] Tarea FSM Iniciada.\n");
   while (1) {
     fsm();
-    vTaskDelay(pdMS_TO_TICKS(1));
+    vTaskDelay(pdMS_TO_TICKS(T_FSM_INI));
   }
 }
 
@@ -616,10 +616,11 @@ void callback(char *topic, byte *payload, unsigned int length) {
       xQueueSend(queueEvents, &evento, NO_WAIT);
     }
   }
-  
 }
 
+
 void vMQTTTask(void *pvParameters) {
+
   WiFi.begin(WIFISSID, PASSWORD);
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
@@ -627,7 +628,7 @@ void vMQTTTask(void *pvParameters) {
   while (1) {
     // Si no hay red, esperar
     if (WiFi.status() != WL_CONNECTED) {
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      vTaskDelay(pdMS_TO_TICKS(T_WIFI));
       continue;
     }
 
@@ -642,14 +643,14 @@ void vMQTTTask(void *pvParameters) {
         client.subscribe(TOPIC_COMANDO);
         client.subscribe(TOPIC_EMERGENCIA); // Seguimos suscribiéndonos al original para comandos
       } else {
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(T_MQTT));
       }
     } else {
       // Si todo está OK, mantener la conexión y leer mensajes
       client.loop();
     }
 
-    vTaskDelay(pdMS_TO_TICKS(20));  // Evita colgar la tarea
+    vTaskDelay(pdMS_TO_TICKS(T_TASK));  // Evita colgar la tarea
   }
 }
 
@@ -698,5 +699,5 @@ void loop() {
     reposo_medido = true;
     Serial.println("=====================================================\n");
   }
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(T_LOOP));
 }
