@@ -306,11 +306,21 @@ void vGetEventTask(void *pvParameters) {
   }
 }
 
+tipo_evento_t get_input() {
+  tipo_evento_t evento_recibido;
+  
+  if (xQueueReceive(queueEvents, &evento_recibido, 0)) {
+    return evento_recibido; 
+  }
+  
+  return EVT_CONTINUE; 
+}
+
 // Máquina de Estados (FSM)
 void fsm() {
-  tipo_evento_t input;
+  tipo_evento_t input= get_input();
 
-  if (xQueueReceive(queueEvents, &input, portMAX_DELAY)) {
+  if (input != EVT_CONTINUE) {
     estado_t estado_anterior = estado_actual;
 
     // Forzar cambio de modo desde MQTT/Serial
