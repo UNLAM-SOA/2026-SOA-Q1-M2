@@ -83,7 +83,15 @@ public class ModoAutomatico extends AppCompatActivity {
         });
 
         btnEmergencia = findViewById(R.id.btn_emergencia);
-        btnEmergencia.setOnClickListener(v -> ConexionESP.getInstancia(ModoAutomatico.this).enviarEmergencia(ModoAutomatico.this));
+        btnEmergencia.setOnClickListener(v -> {
+            String textoActual = btnEmergencia.getText().toString();
+            if (textoActual.equalsIgnoreCase("DESBLOQUEAR")) {
+                ConexionESP.getInstancia(ModoAutomatico.this).publicar(ModoAutomatico.this, "/ventana/emergencia", "DESBLOQUEAR");
+                android.widget.Toast.makeText(ModoAutomatico.this, "Enviando: DESBLOQUEAR", android.widget.Toast.LENGTH_SHORT).show();
+            } else {
+                ConexionESP.getInstancia(ModoAutomatico.this).enviarEmergencia(ModoAutomatico.this);
+            }
+        });
 
         iniciarServicioMqtt();
     }
